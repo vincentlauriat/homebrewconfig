@@ -1,0 +1,13 @@
+[package]
+name = "homebrewconfig"
+version = "0.1.0"
+edition = "2021"
+description = "A beautiful TUI for configuring Homebrew settings"
+license = "MIT"
+keywords = ["homebrew", "cli", "tui", "macos", "configuration"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+ratatui = "0.29"
+crossterm = "0.28"
+dirs = "5"
