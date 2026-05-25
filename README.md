@@ -41,7 +41,7 @@ A terminal UI for configuring [Homebrew](https://brew.sh) environment variables 
 ### From source
 
 ```bash
-git clone https://github.com/yourusername/homebrewconfig
+git clone https://github.com/vincentlauriat/homebrewconfig
 cd homebrewconfig
 cargo install --path .
 ```
