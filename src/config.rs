@@ -197,8 +197,7 @@ mod tests {
         // Feature OFF -> the HOMEBREW_NO_* variable must be exported.
         let mut off = setting(SettingKind::Bool { inverted: true }, "Privacy");
         off.bool_val = false;
-        assert!(generate_block(std::slice::from_ref(&off))
-            .contains("export HOMEBREW_TEST=1"));
+        assert!(generate_block(std::slice::from_ref(&off)).contains("export HOMEBREW_TEST=1"));
     }
 
     #[test]
@@ -212,8 +211,7 @@ mod tests {
     fn generate_block_quotes_and_escapes_strings() {
         let mut s = setting(SettingKind::Str, "Network");
         s.str_val = r#"a"b"#.to_string();
-        assert!(generate_block(std::slice::from_ref(&s))
-            .contains(r#"export HOMEBREW_TEST="a\"b""#));
+        assert!(generate_block(std::slice::from_ref(&s)).contains(r#"export HOMEBREW_TEST="a\"b""#));
     }
 
     #[test]
@@ -253,7 +251,10 @@ mod tests {
 
     #[test]
     fn replace_block_replaces_existing_block_in_place() {
-        let old = format!("before\n{}\nexport OLD=1\n{}\nafter\n", BLOCK_START, BLOCK_END);
+        let old = format!(
+            "before\n{}\nexport OLD=1\n{}\nafter\n",
+            BLOCK_START, BLOCK_END
+        );
         let new_block = format!("{}\nexport NEW=1\n{}", BLOCK_START, BLOCK_END);
         let result = replace_block(&old, &new_block);
         assert!(result.contains("before"));

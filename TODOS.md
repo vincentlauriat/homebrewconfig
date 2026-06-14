@@ -31,7 +31,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 
 ## 📦 Moyen terme
 
-- [ ] **CI GitHub Actions** : `cargo build`, `cargo test`, `cargo clippy`, `cargo fmt --check`
+- [x] **CI GitHub Actions** : `cargo fmt --check`, `cargo clippy -D warnings`, `cargo build`, `cargo test` (`.github/workflows/ci.yml`)
 - [ ] **Recherche / filtre** des réglages (`/` pour filtrer par nom)
 - [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
 - [ ] **Mode CLI non interactif** (`--set HOMEBREW_NO_ANALYTICS=1`, `--apply`) pour scripting

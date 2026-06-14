@@ -61,7 +61,9 @@ impl Setting {
                 self.str_val = env::var(self.env_var).unwrap_or_default();
             }
             SettingKind::Num => {
-                self.num_val = env::var(self.env_var).ok().and_then(|v| v.trim().parse().ok());
+                self.num_val = env::var(self.env_var)
+                    .ok()
+                    .and_then(|v| v.trim().parse().ok());
             }
         }
         self.modified = false;

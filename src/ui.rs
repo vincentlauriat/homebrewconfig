@@ -55,7 +55,10 @@ fn render_header(f: &mut Frame, app: &App, area: Rect) {
     );
 
     let title = Line::from(vec![
-        Span::styled("🍺 homebrewconfig", Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "🍺 homebrewconfig",
+            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" v0.1.0", Style::default().fg(BREW_AMBER)),
     ]);
     let subtitle = Line::from(vec![
@@ -107,7 +110,9 @@ fn render_settings_list(f: &mut Frame, app: &mut App, area: Rect) {
         };
 
         let name_style = if selected {
-            Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD)
         } else {
             Style::default().fg(Color::Gray)
         };
@@ -201,10 +206,7 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect) {
         _ => {
             lines.push(Line::from(vec![
                 Span::styled("Value: ", Style::default().fg(OFF_COLOR)),
-                Span::styled(
-                    setting.value_display(),
-                    Style::default().fg(BREW_AMBER),
-                ),
+                Span::styled(setting.value_display(), Style::default().fg(BREW_AMBER)),
             ]));
         }
     }
@@ -235,19 +237,38 @@ fn render_statusbar(f: &mut Frame, app: &App, area: Rect) {
         .border_style(Style::default().fg(BREW_AMBER));
 
     let line = if let Some((msg, is_error)) = &app.message {
-        let color = if *is_error { Color::Rgb(230, 90, 90) } else { ON_COLOR };
-        Line::from(Span::styled(msg.clone(), Style::default().fg(color).add_modifier(Modifier::BOLD)))
+        let color = if *is_error {
+            Color::Rgb(230, 90, 90)
+        } else {
+            ON_COLOR
+        };
+        Line::from(Span::styled(
+            msg.clone(),
+            Style::default().fg(color).add_modifier(Modifier::BOLD),
+        ))
     } else {
-        let key = |k: &'static str| Span::styled(k, Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD));
+        let key = |k: &'static str| {
+            Span::styled(
+                k,
+                Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+            )
+        };
         let txt = |t: &'static str| Span::styled(t, Style::default().fg(Color::Gray));
         Line::from(vec![
-            key("[↑↓]"), txt(" navigate  "),
-            key("[Space]"), txt(" toggle  "),
-            key("[Enter]"), txt(" edit  "),
-            key("[a]"), txt(" apply  "),
-            key("[r]"), txt(" reset  "),
-            key("[?]"), txt(" help  "),
-            key("[q]"), txt(" quit"),
+            key("[↑↓]"),
+            txt(" navigate  "),
+            key("[Space]"),
+            txt(" toggle  "),
+            key("[Enter]"),
+            txt(" edit  "),
+            key("[a]"),
+            txt(" apply  "),
+            key("[r]"),
+            txt(" reset  "),
+            key("[?]"),
+            txt(" help  "),
+            key("[q]"),
+            txt(" quit"),
         ])
     };
 
@@ -349,7 +370,9 @@ fn render_confirm_popup(f: &mut Frame, app: &App) {
         let style = if raw.starts_with("# homebrewconfig") {
             Style::default().fg(OFF_COLOR)
         } else if raw.starts_with('#') {
-            Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(CATEGORY_COLOR)
+                .add_modifier(Modifier::BOLD)
         } else if raw.starts_with("export") {
             Style::default().fg(ON_COLOR)
         } else {
@@ -361,13 +384,21 @@ fn render_confirm_popup(f: &mut Frame, app: &App) {
     let body_block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::default().fg(BREW_AMBER));
-    let body = Paragraph::new(lines).block(body_block).wrap(Wrap { trim: false });
+    let body = Paragraph::new(lines)
+        .block(body_block)
+        .wrap(Wrap { trim: false });
     f.render_widget(body, inner[1]);
 
     let hint = Line::from(vec![
-        Span::styled("[y/Enter]", Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "[y/Enter]",
+            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" apply   ", Style::default().fg(Color::Gray)),
-        Span::styled("[n/Esc]", Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "[n/Esc]",
+            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+        ),
         Span::styled(" cancel", Style::default().fg(Color::Gray)),
     ]);
     let hint_para = Paragraph::new(hint);
@@ -380,29 +411,50 @@ fn render_help_popup(f: &mut Frame) {
 
     let key = |k: &'static str, d: &'static str| {
         Line::from(vec![
-            Span::styled(format!("  {:<12}", k), Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                format!("  {:<12}", k),
+                Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+            ),
             Span::styled(d, Style::default().fg(Color::Gray)),
         ])
     };
 
     let lines = vec![
         Line::from(""),
-        Line::from(Span::styled("  Navigation", Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD))),
+        Line::from(Span::styled(
+            "  Navigation",
+            Style::default()
+                .fg(CATEGORY_COLOR)
+                .add_modifier(Modifier::BOLD),
+        )),
         key("↑ / k", "Move selection up"),
         key("↓ / j", "Move selection down"),
         Line::from(""),
-        Line::from(Span::styled("  Editing", Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD))),
+        Line::from(Span::styled(
+            "  Editing",
+            Style::default()
+                .fg(CATEGORY_COLOR)
+                .add_modifier(Modifier::BOLD),
+        )),
         key("Space", "Toggle a boolean setting"),
         key("Enter", "Edit a string/number setting"),
         key("Esc", "Cancel editing / close help"),
         Line::from(""),
-        Line::from(Span::styled("  Actions", Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD))),
+        Line::from(Span::styled(
+            "  Actions",
+            Style::default()
+                .fg(CATEGORY_COLOR)
+                .add_modifier(Modifier::BOLD),
+        )),
         key("a", "Apply (asks to confirm + preview)"),
         key("r", "Reset to current environment"),
         key("?", "Toggle this help"),
         key("q", "Quit"),
         Line::from(""),
-        Line::from(Span::styled("  Press ? or Esc to close", Style::default().fg(OFF_COLOR))),
+        Line::from(Span::styled(
+            "  Press ? or Esc to close",
+            Style::default().fg(OFF_COLOR),
+        )),
     ];
 
     let block = Block::default()
