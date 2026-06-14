@@ -37,7 +37,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
 - [x] **Cible de profil configurable** : auto-détection (fichier contenant déjà le bloc → existant → préféré), flag `--profile <PATH>`, et touche `p` pour cycler dans l'UI
 - [x] **Mode CLI non interactif** : `--set VAR=VALUE`, `--unset VAR`, `--apply`, `--dry-run`, `--list` (scriptable, 7 tests) — début du Jalon 3
-- [ ] **Export/import** de presets (profils partagés en JSON/TOML)
+- [x] **Export/import** de presets TOML (`--export-preset` / `--import-preset`, baseline + override par `--set`, vars inconnues ignorées avec warning, 4 tests)
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
 
 ## 🎯 Long terme / idées
