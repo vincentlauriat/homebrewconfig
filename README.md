@@ -43,6 +43,12 @@ A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment va
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install vincentlauriat/tap/homebrewconfig
+```
+
 ### From crates.io
 
 ```bash
