@@ -1,118 +1,195 @@
 # Architecture
 
-Ce document décrit l'architecture interne de **homebrewconfig**, une application TUI (Terminal User Interface) écrite en Rust qui édite les variables d'environnement de Homebrew dans le profil shell de l'utilisateur.
+Ce document décrit l'architecture interne de **homebrewconfig**, écrit en Rust.
+L'outil a deux visages partageant le même cœur :
+
+- une **TUI** interactive (ratatui/crossterm) pour parcourir et éditer les
+  réglages ;
+- une **CLI** non interactive (mode *batch*) pour le scripting.
+
+Tous deux éditent les variables d'environnement Homebrew dans le profil shell de
+l'utilisateur.
 
 ## Vue d'ensemble
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                          main.rs                             │
-│   Boucle d'événements · setup/teardown du terminal           │
-│   Routage clavier (Mode::Normal / Mode::Editing)             │
-└───────────────┬───────────────────────────┬──────────────────┘
-                │                           │
-                ▼                           ▼
-        ┌───────────────┐          ┌──────────────────┐
-        │    app.rs     │          │      ui.rs       │
-        │  État & logique│◀────────│  Rendu ratatui   │
-        │  (App, Setting)│  &App   │  (lecture seule) │
-        └───────┬───────┘          └──────────────────┘
-                │ &App
-                ▼
-        ┌───────────────┐
-        │   config.rs   │
-        │  I/O profil   │
-        │  shell (write)│
-        └───────────────┘
+                          ┌──────────────────────────────┐
+                          │            main.rs           │
+                          │  parse_args → Cli            │
+                          │  is_batch ? run_batch : TUI  │
+                          └───────┬───────────────┬──────┘
+              batch (CLI)         │               │  interactif (TUI)
+        ┌───────────────┬─────────┘               └───────┬───────────────┐
+        ▼               ▼                                 ▼               ▼
+  ┌───────────┐   ┌───────────┐                     ┌───────────┐   ┌───────────┐
+  │ preset.rs │   │ report.rs │                     │  boucle   │   │   ui.rs   │
+  │ TOML I/O  │   │ JSON out  │                     │ d'events  │──▶│  rendu    │
+  └─────┬─────┘   └─────┬─────┘                     └─────┬─────┘   │ (lecture) │
+        │               │      ┌───────────┐              │         └───────────┘
+        │               │      │  brew.rs  │              │
+        │               │      │ brew env  │              │
+        └───────┬───────┴──────┴─────┬─────┘              │
+                ▼                    ▼                    ▼
+            ┌──────────────────────────────────────────────┐
+            │                   app.rs                      │
+            │   App, Setting, Mode, SettingKind — état &    │
+            │   logique métier (catalogue, filtre, profil)  │
+            └───────────────────────┬──────────────────────┘
+                                    │ &App
+                                    ▼
+                            ┌───────────────┐
+                            │   config.rs   │
+                            │  I/O profil   │
+                            │  shell (write)│
+                            └───────────────┘
 ```
 
 L'application suit un modèle proche de **Model–View–Update** :
 
 - **Model** → `App` et `Setting` (`app.rs`) détiennent tout l'état.
-- **View** → `ui.rs` est une fonction pure de rendu qui ne fait que lire `&App`.
-- **Update** → `main.rs` capture les événements clavier et mute `App` via ses méthodes.
-- **Effets de bord** → `config.rs` isole la seule écriture sur disque (le profil shell).
+- **View** → `ui.rs` est une fonction de rendu qui ne fait que lire `&App`.
+- **Update** → `main.rs` capture les événements clavier et mute `App`.
+- **Effets de bord** → `config.rs` isole l'écriture du profil ; `brew.rs` le seul
+  sous-processus ; `preset.rs` / `report.rs` la sérialisation.
 
-Aucune dépendance circulaire : `ui.rs` et `config.rs` dépendent de `app.rs`, jamais l'inverse.
+Aucune dépendance circulaire : tous les modules dépendent de `app.rs`, jamais
+l'inverse. `app.rs` ne dépend que de `config.rs` (pour la détection du bloc).
 
 ## Modules
 
-### `main.rs` — point d'entrée & boucle d'événements
+### `main.rs` — point d'entrée, CLI & boucle d'événements
 
-Responsabilités :
-
-- **Setup terminal** : `enable_raw_mode`, passage en écran alternatif (`EnterAlternateScreen`), capture souris.
-- **Teardown garanti** : la restauration du terminal (`disable_raw_mode`, `LeaveAlternateScreen`) est exécutée **avant** de propager une éventuelle erreur, pour ne jamais laisser le terminal dans un état cassé.
-- **Boucle principale** (`run`) :
-  - Gère l'expiration des messages de statut (`MESSAGE_TIMEOUT` = 3 s).
-  - Redessine via `terminal.draw(|f| ui::render(f, app))`.
-  - Sonde les événements avec `event::poll(100ms)` (tick non bloquant, nécessaire pour faire expirer les messages même sans frappe).
-  - Filtre les répétitions clavier : ne traite que `KeyEventKind::Press`.
-- **Routage clavier** : `handle_normal` (navigation, toggle, apply, quit) et `handle_editing` (saisie de texte dans la popup). La gestion du curseur est *char-aware* via `char_to_byte` pour rester correcte en UTF-8.
+- **`parse_args` → `Cli`** : analyse les arguments en une structure `Cli`
+  (profil, `sets`/`unsets`, presets, drapeaux `apply`/`dry_run`/`list`/`json`/
+  `brew_env`). `Cli::is_batch()` décide du mode.
+- **Mode batch** (`run_batch`) : si un drapeau non interactif est présent, on
+  n'ouvre pas la TUI. Ordre : `--brew-env` (autonome) → import preset (baseline)
+  → `--set`/`--unset` (override) → export preset → `--list` → `--json` →
+  `--dry-run` → `--apply`. Les erreurs sortent avec un code ≠ 0.
+- **Mode TUI** :
+  - **Setup/teardown terminal** : raw mode + écran alternatif ; la restauration
+    est garantie **avant** toute propagation d'erreur.
+  - **Boucle `run`** : expiration des messages (`MESSAGE_TIMEOUT` = 3 s),
+    `terminal.draw`, `event::poll(100ms)`, filtre `KeyEventKind::Press`.
+  - **Routage clavier** par mode : `handle_normal`, `handle_editing`,
+    `handle_confirm`, `handle_filter`. Curseur d'édition *char-aware*
+    (`char_to_byte`) pour l'UTF-8.
 
 ### `app.rs` — état & logique métier
 
 Types clés :
 
-- **`SettingKind`** : `Bool { inverted }`, `Str`, `Num`.
-  - Le flag `inverted` est central : beaucoup de variables Homebrew sont des **négations** (`HOMEBREW_NO_ANALYTICS`). Dans l'UI on présente la *fonctionnalité* (« Analytics ON ») alors que la variable d'environnement code l'inverse. `inverted: true` fait la traduction dans les deux sens (lecture env ↔ affichage, affichage ↔ export).
-- **`Setting`** : un réglage = métadonnées statiques (`name`, `env_var`, `description`, `category`, `kind`) + valeurs courantes (`bool_val`, `str_val`, `num_val`) + `modified` (dirty flag).
-- **`Mode`** : `Normal` ou `Editing`.
-- **`App`** : agrège `Vec<Setting>`, l'index sélectionné, l'état de la liste ratatui (`ListState`), le mode courant, le buffer d'édition (`input` + `cursor_pos`), le chemin du profil shell, un message optionnel `(texte, is_error)` et le flag `show_help`.
+- **`SettingKind`** : `Bool { inverted }`, `Str`, `Num`. Le flag `inverted` est
+  central : beaucoup de variables Homebrew sont des **négations**
+  (`HOMEBREW_NO_ANALYTICS`). L'UI montre la *fonctionnalité* (« Analytics ON »)
+  tandis que la variable code l'inverse ; `inverted: true` fait la traduction
+  dans les deux sens (lecture env ↔ affichage, affichage ↔ export).
+- **`Setting`** : métadonnées statiques (`name`, `env_var`, `description`,
+  `category`, `kind`) + valeurs (`bool_val`, `str_val`, `num_val`) + `modified`
+  + `default_hint` (défaut Homebrew affiché) + `is_path` (chemin à valider). Des
+  builders chaînables — `with_default`, `with_path_flag` — n'enrichissent que les
+  entrées concernées.
+- **`Mode`** : `Normal`, `Editing`, `Confirming`, `Filtering`.
+- **`App`** : `Vec<Setting>`, index sélectionné, `ListState` ratatui, mode,
+  buffer d'édition, **filtre** courant, **profil shell** + **candidats**, message
+  optionnel `(texte, is_error)`, `show_help`.
 
 Logique notable :
 
-- **`read_from_env`** : initialise chaque réglage à partir de l'environnement courant au lancement (et lors d'un `reset`). Applique l'inversion pour les booléens.
-- **`build_settings`** : déclare le catalogue complet des 22 réglages (source de vérité unique). Ajouter un réglage = ajouter une entrée ici.
-- **`compute_list_index`** : la liste affichée intercale des **en-têtes de catégorie** et des lignes vides ; cette fonction convertit l'index logique d'un réglage en index visuel dans la `List` ratatui, pour garder la surbrillance alignée.
-- **`detect_shell_profile`** : choisit le fichier cible selon `$SHELL` (zsh → `~/.zprofile`, fish → `~/.config/fish/config.fish`, sinon → `~/.bash_profile`).
+- **`apply_env_value`** (pur) : conversion d'une `Option<String>` brute vers la
+  valeur typée, séparée de `read_from_env` pour être testable sans toucher
+  l'environnement du process. Applique l'inversion.
+- **`build_settings`** : catalogue des **22 réglages** (source de vérité unique).
+- **`set_var`** : applique une valeur par variable d'environnement — utilisé par
+  la CLI batch (`--set`/`--unset`/presets).
+- **Filtre** : `visible()` renvoie les indices correspondant au filtre (nom, var,
+  catégorie, description) ; navigation et `sync_list_state` opèrent sur cet
+  ensemble visible.
+- **Profil** : `profile_candidates()` liste les fichiers candidats par shell ;
+  `pick_profile(candidats, has_block, exists)` (prédicats injectés, donc
+  testable) choisit le fichier contenant déjà le bloc, sinon le premier existant,
+  sinon le préféré ; `cycle_profile` cycle la cible dans la TUI.
+- **`path_status(exists)`** (prédicat injecté) : pour un réglage chemin renseigné,
+  indique s'il existe.
 
 ### `ui.rs` — rendu (lecture seule)
 
-- Fonction racine `render(f, app)` qui découpe l'écran en trois bandes verticales : **header** (4), **body** (min), **status bar** (3).
-- Le body est découpé horizontalement : liste des réglages (55 %) + panneau de détail (45 %).
-- Popups par-dessus via `Clear` + `centered_rect` : édition (`render_edit_popup`) et aide (`render_help_popup`).
-- Palette « Homebrew » centralisée en constantes (`BREW_GOLD`, `BREW_AMBER`, `ON_COLOR`, etc.).
-- `truncate` coupe proprement les valeurs longues en UTF-8 avec une ellipse.
-- **Invariant** : ce module ne mute jamais l'état métier (il reçoit `&App` ; `&mut App` n'est utilisé que pour `ListState`, exigé par `render_stateful_widget`).
+- `render` découpe l'écran en **header** (4) / **body** (min) / **status bar** (3).
+  Le body est scindé : liste des réglages (55 %) + détail (45 %).
+- Popups via `Clear` + `centered_rect` : édition, **confirmation+preview**
+  (`render_confirm_popup`, bloc colorisé), aide.
+- Le header affiche la version (`CARGO_PKG_VERSION`), le profil cible et un
+  compteur **« ● N unsaved »**. Le détail montre la valeur par défaut Homebrew et
+  le statut d'existence des chemins.
+- La liste et le détail respectent le **filtre** (`(no matches)` géré).
+- **Invariant** : ne mute jamais l'état métier (`&mut App` seulement pour
+  `ListState`, exigé par `render_stateful_widget`).
 
 ### `config.rs` — persistance du profil shell
 
-C'est le seul module qui écrit sur le disque. Garanties :
+Seul module qui écrit le profil. Garanties :
 
-- **Bloc délimité** : tout est encadré par `# homebrewconfig BEGIN` / `# homebrewconfig END`.
-- **Idempotence** (`replace_block`) : si le bloc existe déjà, il est remplacé *en place* ; sinon il est ajouté en fin de fichier. Relancer l'outil ne crée jamais de doublon et préserve le reste du profil.
-- **Création de parents** : `create_dir_all` pour le cas fish (`~/.config/fish/`).
-- **Génération** (`generate_block`) : n'exporte que les valeurs « non-défaut » — un booléen à sa valeur par défaut ou une chaîne vide ne produit aucune ligne, gardant le profil minimal. Inversion gérée ici aussi.
-- **Échappement** (`escape_value`) : protège `\` et `"` dans les valeurs chaînes.
+- **Bloc délimité** `# homebrewconfig BEGIN/END`, **idempotent** (`replace_block`
+  remplace en place, sinon ajoute en fin de fichier, préservant le reste).
+- **Backup** : copie vers `<profil>.bak` avant écrasement ; une application sans
+  changement est un **no-op**.
+- **`generate_block`** : n'exporte que les valeurs non-défaut (inversion gérée).
+- **`escape_value`** : protège `\` et `"`. **`file_contains_block`** : détecte
+  notre bloc (utilisé par la sélection de profil).
+
+### `preset.rs` — presets TOML (serde + toml)
+
+- **`export_preset`** : sérialise les réglages non-défaut en table `[settings]`
+  (`HOMEBREW_* = "value"`).
+- **`parse_preset`** : lit un TOML en paires `(env_var, raw)`.
+- Un preset sert de **baseline** ; les `--set`/`--unset` l'emportent ensuite.
+
+### `report.rs` — sortie JSON (serde_json)
+
+- **`state_json`** : tableau JSON typé par kind (`bool`/`number`/`string`) de
+  tous les réglages, avec `value`, `modified` et `default`.
+
+### `brew.rs` — lecture de l'environnement Homebrew
+
+- **`brew_environment`** : lance `brew environment --shell=bash` (seul
+  sous-processus de l'app) ; `None` si `brew` est introuvable.
+- **`parse_brew_env`** (pur) : extrait les assignations `HOMEBREW_*`.
+- Dégradation gracieuse : `--brew-env` ne modifie rien.
 
 ## Flux de données
 
-### Démarrage
+### Démarrage (TUI)
 ```
-main() → App::new() → build_settings() → read_from_env() (×22)
-       → detect_shell_profile() → boucle run()
-```
-
-### Frappe clavier (mode normal)
-```
-event::read() → handle_normal() → App::{select_*, toggle_current, start_editing, reset}
-              → ui::render() au tick suivant
+main() → parse_args() → App::with_profile(profil)
+       → build_settings() → read_from_env() (×22)
+       → profile_candidates() / pick_profile() → boucle run()
 ```
 
-### Application (`a`)
+### Application (`a` → confirmation → `y`)
 ```
-handle_normal('a') → config::apply_config(&app)
-   → read profil existant → generate_block() → replace_block() → fs::write()
-   → reset des dirty flags → message de confirmation
+handle_normal('a') → Mode::Confirming → render_confirm_popup (preview)
+handle_confirm('y') → config::apply_config(&app)
+   → read profil → generate_block() → replace_block()
+   → backup <profil>.bak → fs::write() → reset des dirty flags
+```
+
+### Mode batch (CLI)
+```
+parse_args() → Cli::is_batch() == true → run_batch()
+   → import preset → set/unset → export preset → list/json/dry-run/apply
 ```
 
 ## Décisions de conception
 
-- **Catalogue statique en code** plutôt qu'un fichier de config : zéro dépendance de parsing, les métadonnées (`&'static str`) sont sans coût, et la liste des variables Homebrew évolue lentement.
-- **Bloc géré idempotent** plutôt que réécriture complète du profil : on ne s'approprie que notre section, le reste du fichier utilisateur reste intact et éditable à la main.
-- **Séparation View/Update stricte** : le rendu est rejouable et testable indépendamment de la logique.
-- **Teardown avant propagation d'erreur** : robustesse du terminal en cas de panic/erreur.
+- **Catalogue statique en code** : zéro parsing, métadonnées `&'static str` sans
+  coût, la liste des variables Homebrew évolue lentement.
+- **Bloc géré idempotent + backup** : on ne possède que notre section, le reste
+  du profil reste intact, et toute écriture est réversible.
+- **Logique pure injectable** (`apply_env_value`, `pick_profile`, `path_status`,
+  `parse_brew_env`, `generate_block(&[Setting])`) : testable sans I/O — d'où une
+  suite de **47 tests** sans toucher au terminal ni au disque.
+- **Cœur partagé TUI/CLI** : la même logique `App`/`Setting` sert les deux modes.
+- **Teardown avant propagation d'erreur** : robustesse du terminal.
 
 ## Dépendances
 
@@ -121,9 +198,17 @@ handle_normal('a') → config::apply_config(&app)
 | `ratatui` 0.29 | Widgets et layout TUI |
 | `crossterm` 0.28 | Backend terminal (raw mode, événements, écran alternatif) |
 | `dirs` 5 | Résolution du répertoire home multi-plateforme |
+| `serde` 1 + `toml` 0.8 | Sérialisation des presets TOML |
+| `serde_json` 1 | Sortie `--json` |
 
 ## Points d'extension
 
-- **Ajouter un réglage** : une entrée dans `App::build_settings`. Le rendu, la lecture env et l'export le prennent en charge automatiquement.
-- **Nouveau type de réglage** (ex. énumération) : étendre `SettingKind` puis compléter les `match` dans `value_display`, `read_from_env`, `start_editing`, `confirm_edit`, `generate_block` et le rendu.
-- **Nouveau shell** : une branche dans `detect_shell_profile`.
+- **Ajouter un réglage** : une entrée dans `App::build_settings` (avec
+  éventuellement `.with_default(...)` / `.with_path_flag()`). Rendu, lecture env,
+  export, presets et JSON le prennent en charge automatiquement.
+- **Nouveau type de réglage** : étendre `SettingKind` puis compléter les `match`
+  (`value_display`, `apply_env_value`, `start_editing`, `confirm_edit`,
+  `generate_block`, `report`, le rendu).
+- **Nouveau shell** : une branche dans `App::profile_candidates`.
+- **Nouvelle commande CLI** : un champ dans `Cli`, une branche dans `parse_args`,
+  un traitement dans `run_batch`.
