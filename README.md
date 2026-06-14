@@ -1,6 +1,8 @@
 # homebrewconfig
 
-A terminal UI for configuring [Homebrew](https://brew.sh) environment variables — no manual shell profile editing required.
+[![CI](https://github.com/vincentlauriat/homebrewconfig/actions/workflows/ci.yml/badge.svg)](https://github.com/vincentlauriat/homebrewconfig/actions/workflows/ci.yml)
+
+A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment variables — no manual shell profile editing required.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
@@ -227,6 +229,7 @@ candidates live with `p` inside the TUI.
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture interne, modules, flux de données, décisions de conception |
 | [PLAN.md](PLAN.md) | Feuille de route par jalons (v0.2.0 → v1.0.0) |
 | [TODOS.md](TODOS.md) | Suivi détaillé des tâches faites et à venir |
+| [CHANGELOG.md](CHANGELOG.md) | Journal des changements (Keep a Changelog) |
 
 ## License
 

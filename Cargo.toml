@@ -2,8 +2,12 @@
 name = "homebrewconfig"
 version = "0.1.0"
 edition = "2021"
-description = "A beautiful TUI for configuring Homebrew settings"
+rust-version = "1.70"
+description = "A TUI and CLI for configuring Homebrew environment variables"
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/vincentlauriat/homebrewconfig"
+homepage = "https://github.com/vincentlauriat/homebrewconfig"
 keywords = ["homebrew", "cli", "tui", "macos", "configuration"]
 categories = ["command-line-utilities"]
 
