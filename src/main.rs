@@ -79,6 +79,7 @@ fn run<B: ratatui::backend::Backend>(
                         }
                     }
                     Mode::Editing => handle_editing(app, key),
+                    Mode::Confirming => handle_confirm(app, key),
                 }
                 if app.message.is_some() && !had_message {
                     message_set_at = Some(Instant::now());
@@ -107,21 +108,35 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char(' ') => app.toggle_current(),
         KeyCode::Enter => app.start_editing(),
         KeyCode::Char('r') => app.reset(),
-        KeyCode::Char('a') => match config::apply_config(app) {
-            Ok(()) => {
-                for setting in &mut app.settings {
-                    setting.modified = false;
-                }
-                let path = app.shell_profile.display().to_string();
-                app.message = Some((format!("Applied to {}", path), false));
-            }
-            Err(e) => {
-                app.message = Some((e, true));
-            }
-        },
+        KeyCode::Char('a') => app.mode = Mode::Confirming,
         _ => {}
     }
     false
+}
+
+fn handle_confirm(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Enter | KeyCode::Char('y') => {
+            match config::apply_config(app) {
+                Ok(()) => {
+                    for setting in &mut app.settings {
+                        setting.modified = false;
+                    }
+                    let path = app.shell_profile.display().to_string();
+                    app.message = Some((format!("Applied to {}", path), false));
+                }
+                Err(e) => {
+                    app.message = Some((e, true));
+                }
+            }
+            app.mode = Mode::Normal;
+        }
+        KeyCode::Esc | KeyCode::Char('n') => {
+            app.mode = Mode::Normal;
+            app.message = Some(("Apply cancelled".to_string(), false));
+        }
+        _ => {}
+    }
 }
 
 fn handle_editing(app: &mut App, key: KeyEvent) {

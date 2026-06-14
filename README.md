@@ -57,7 +57,7 @@ cargo install --path .
 homebrewconfig
 ```
 
-Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply. The tool writes an export block to your shell profile (e.g. `~/.zprofile`) and leaves the rest of the file untouched.
+Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply. A confirmation popup previews the exact export block that will be written; press `y`/`Enter` to confirm or `n`/`Esc` to cancel. The tool writes the block to your shell profile (e.g. `~/.zprofile`), backs up the previous version to `~/.zprofile.bak`, and leaves the rest of the file untouched.
 
 ## Keybindings
 
@@ -66,7 +66,7 @@ Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply.
 | `↑` / `↓` or `k` / `j` | Move selection |
 | `Space` | Toggle a boolean setting |
 | `Enter` | Edit a string or number setting |
-| `a` | Apply all changes to shell profile |
+| `a` | Apply all changes (shows a confirmation + preview first) |
 | `r` | Reset to current environment values |
 | `?` | Toggle help |
 | `Esc` | Close help / quit |
@@ -128,6 +128,14 @@ Running the tool again replaces only this block, leaving everything else in your
 | zsh | `~/.zprofile` |
 | bash | `~/.bash_profile` |
 | fish | `~/.config/fish/config.fish` |
+
+## Documentation
+
+| Document | Contenu |
+|----------|---------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture interne, modules, flux de données, décisions de conception |
+| [PLAN.md](PLAN.md) | Feuille de route par jalons (v0.2.0 → v1.0.0) |
+| [TODOS.md](TODOS.md) | Suivi détaillé des tâches faites et à venir |
 
 ## License
 
