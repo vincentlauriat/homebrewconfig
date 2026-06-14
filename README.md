@@ -71,6 +71,8 @@ Press `p` at any time to cycle the write target between the candidate profiles f
 | `-p`, `--profile <PATH>` | Write to this profile instead of the auto-detected one |
 | `--set VAR=VALUE` | Set a Homebrew variable (repeatable; non-interactive) |
 | `--unset VAR` | Reset a variable to its Homebrew default (repeatable) |
+| `--import-preset <PATH>` | Load settings from a TOML preset (used as a baseline) |
+| `--export-preset <PATH>` | Write current non-default settings to a TOML preset |
 | `--apply` | Write the profile without opening the UI |
 | `--dry-run` | Print the export block that would be written, then exit |
 | `--list` | Print all settings and their current values, then exit |
@@ -93,6 +95,24 @@ homebrewconfig --set HOMEBREW_NO_ANALYTICS=1 \
 # Reset a variable to its default and inspect the result
 homebrewconfig --unset HOMEBREW_CLEANUP_MAX_AGE_DAYS --list
 ```
+
+#### Presets
+
+Capture your current configuration as a shareable TOML file and re-apply it on
+another machine:
+
+```bash
+# Save the current non-default settings
+homebrewconfig --export-preset team-defaults.toml
+
+# Apply a preset somewhere else (and write it to the profile)
+homebrewconfig --import-preset team-defaults.toml --apply
+```
+
+A preset is the baseline: any `--set` / `--unset` on the same command line
+overrides it. Unknown variables in a preset are skipped with a warning, so
+presets from a newer version stay forward-compatible. The format is a flat
+`[settings]` table of `HOMEBREW_* = "value"` entries.
 
 `VAR` is the Homebrew environment variable name. For boolean `HOMEBREW_NO_*`
 variables, `--set` makes the variable present (feature off) and `--unset`

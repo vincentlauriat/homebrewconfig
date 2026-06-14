@@ -1,7 +1,9 @@
 mod app;
 mod config;
+mod preset;
 mod ui;
 
+use std::fs;
 use std::io;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -67,6 +69,8 @@ struct Cli {
     profile: Option<PathBuf>,
     sets: Vec<(String, String)>,
     unsets: Vec<String>,
+    import_preset: Option<PathBuf>,
+    export_preset: Option<PathBuf>,
     apply: bool,
     dry_run: bool,
     list: bool,
@@ -75,7 +79,13 @@ struct Cli {
 impl Cli {
     /// True when any non-interactive flag is present, so we skip the TUI.
     fn is_batch(&self) -> bool {
-        !self.sets.is_empty() || !self.unsets.is_empty() || self.apply || self.dry_run || self.list
+        !self.sets.is_empty()
+            || !self.unsets.is_empty()
+            || self.import_preset.is_some()
+            || self.export_preset.is_some()
+            || self.apply
+            || self.dry_run
+            || self.list
     }
 }
 
@@ -118,6 +128,14 @@ fn parse_args() -> ArgAction {
                 Some(var) => cli.unsets.push(var),
                 None => return arg_error("--unset requires a variable name"),
             },
+            "--import-preset" => match args.next() {
+                Some(path) => cli.import_preset = Some(PathBuf::from(path)),
+                None => return arg_error("--import-preset requires a path"),
+            },
+            "--export-preset" => match args.next() {
+                Some(path) => cli.export_preset = Some(PathBuf::from(path)),
+                None => return arg_error("--export-preset requires a path"),
+            },
             "--apply" => cli.apply = true,
             "--dry-run" => cli.dry_run = true,
             "--list" => cli.list = true,
@@ -133,6 +151,10 @@ fn parse_args() -> ArgAction {
                     }
                 } else if let Some(rest) = other.strip_prefix("--unset=") {
                     cli.unsets.push(rest.to_string());
+                } else if let Some(rest) = other.strip_prefix("--import-preset=") {
+                    cli.import_preset = Some(PathBuf::from(rest));
+                } else if let Some(rest) = other.strip_prefix("--export-preset=") {
+                    cli.export_preset = Some(PathBuf::from(rest));
                 } else {
                     return arg_error(&format!("unknown argument '{}'. Try --help.", other));
                 }
@@ -151,11 +173,28 @@ fn arg_error(msg: &str) -> ArgAction {
 fn run_batch(cli: &Cli) -> Result<(), String> {
     let mut app = App::with_profile(cli.profile.clone());
 
+    // A preset is the baseline; explicit --set/--unset override it afterwards.
+    if let Some(path) = &cli.import_preset {
+        let content = fs::read_to_string(path)
+            .map_err(|e| format!("failed to read {}: {}", path.display(), e))?;
+        for (var, value) in preset::parse_preset(&content)? {
+            if let Err(e) = app.set_var(&var, Some(value)) {
+                eprintln!("warning: skipping {} from preset: {}", var, e);
+            }
+        }
+    }
+
     for (var, value) in &cli.sets {
         app.set_var(var, Some(value.clone()))?;
     }
     for var in &cli.unsets {
         app.set_var(var, None)?;
+    }
+
+    if let Some(path) = &cli.export_preset {
+        let toml = preset::export_preset(&app)?;
+        fs::write(path, toml).map_err(|e| format!("failed to write {}: {}", path.display(), e))?;
+        println!("Wrote preset to {}", path.display());
     }
 
     if cli.list {
@@ -187,6 +226,8 @@ fn print_help() {
          -p, --profile <PATH>   Write to this shell profile instead of the auto-detected one\n    \
              --set VAR=VALUE    Set a Homebrew variable (repeatable; non-interactive)\n    \
              --unset VAR        Reset a variable to its Homebrew default (repeatable)\n    \
+             --import-preset <PATH>  Load settings from a TOML preset (baseline)\n    \
+             --export-preset <PATH>  Write current non-default settings to a TOML preset\n    \
              --apply            Write the profile without opening the UI\n    \
              --dry-run          Print the export block that would be written, then exit\n    \
              --list             Print all settings and their current values, then exit\n    \
