@@ -5,6 +5,7 @@ use ratatui::widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap};
 use ratatui::Frame;
 
 use crate::app::{App, Mode, SettingKind};
+use crate::config;
 
 const BREW_GOLD: Color = Color::Rgb(255, 180, 0);
 const BREW_AMBER: Color = Color::Rgb(230, 120, 0);
@@ -33,6 +34,10 @@ pub fn render(f: &mut Frame, app: &mut App) {
 
     if app.mode == Mode::Editing {
         render_edit_popup(f, app);
+    }
+
+    if app.mode == Mode::Confirming {
+        render_confirm_popup(f, app);
     }
 
     if app.show_help {
@@ -300,6 +305,75 @@ fn render_edit_popup(f: &mut Frame, app: &App) {
     f.render_widget(hint_para, inner[2]);
 }
 
+fn render_confirm_popup(f: &mut Frame, app: &App) {
+    let area = centered_rect(70, 70, f.area());
+    f.render_widget(Clear, area);
+
+    let profile = app.shell_profile.display().to_string().replace(
+        &dirs::home_dir()
+            .map(|h| h.display().to_string())
+            .unwrap_or_default(),
+        "~",
+    );
+
+    let block = Block::default()
+        .title(Span::styled(
+            " Apply changes? ",
+            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+        ))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(BREW_GOLD))
+        .style(Style::default().bg(BG));
+    f.render_widget(block, area);
+
+    let inner = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(2)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Min(1),
+            Constraint::Length(2),
+        ])
+        .split(area);
+
+    let target = Paragraph::new(Line::from(vec![
+        Span::styled("Will write to ", Style::default().fg(Color::Gray)),
+        Span::styled(profile, Style::default().fg(MODIFIED_COLOR)),
+    ]))
+    .wrap(Wrap { trim: true });
+    f.render_widget(target, inner[0]);
+
+    let preview = config::preview_block(app);
+    let mut lines: Vec<Line> = Vec::new();
+    for raw in preview.lines() {
+        let style = if raw.starts_with("# homebrewconfig") {
+            Style::default().fg(OFF_COLOR)
+        } else if raw.starts_with('#') {
+            Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD)
+        } else if raw.starts_with("export") {
+            Style::default().fg(ON_COLOR)
+        } else {
+            Style::default().fg(Color::Gray)
+        };
+        lines.push(Line::from(Span::styled(raw.to_string(), style)));
+    }
+
+    let body_block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(BREW_AMBER));
+    let body = Paragraph::new(lines).block(body_block).wrap(Wrap { trim: false });
+    f.render_widget(body, inner[1]);
+
+    let hint = Line::from(vec![
+        Span::styled("[y/Enter]", Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+        Span::styled(" apply   ", Style::default().fg(Color::Gray)),
+        Span::styled("[n/Esc]", Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD)),
+        Span::styled(" cancel", Style::default().fg(Color::Gray)),
+    ]);
+    let hint_para = Paragraph::new(hint);
+    f.render_widget(hint_para, inner[2]);
+}
+
 fn render_help_popup(f: &mut Frame) {
     let area = centered_rect(50, 70, f.area());
     f.render_widget(Clear, area);
@@ -323,7 +397,7 @@ fn render_help_popup(f: &mut Frame) {
         key("Esc", "Cancel editing / close help"),
         Line::from(""),
         Line::from(Span::styled("  Actions", Style::default().fg(CATEGORY_COLOR).add_modifier(Modifier::BOLD))),
-        key("a", "Apply config to shell profile"),
+        key("a", "Apply (asks to confirm + preview)"),
         key("r", "Reset to current environment"),
         key("?", "Toggle this help"),
         key("q", "Quit"),

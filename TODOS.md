@@ -24,9 +24,9 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 
 - [x] **Tests unitaires** pour `config.rs` (`replace_block`, `generate_block`, `escape_value`) — 12 tests, logique pure couverte ; `generate_block` découplé pour prendre `&[Setting]`
 - [x] **Backup** du profil avant écriture (`<profil>.bak`) pour rollback
+- [x] **Confirmation** avant `apply` (popup « Apply changes? » avec `y/n`)
+- [x] **Diff preview** : le bloc qui sera écrit est affiché et colorisé dans la popup de confirmation
 - [ ] **Tests** de la conversion `read_from_env` (nécessite injection de l'environnement) — l'inversion booléenne est déjà couverte indirectement via `generate_block`
-- [ ] **Confirmation** avant `apply` (popup « Écrire dans ~/.zprofile ? »)
-- [ ] **Diff preview** : montrer le bloc qui sera écrit avant de confirmer
 - [ ] Gestion de la **valeur par défaut visible** (afficher la valeur Homebrew par défaut dans le détail)
 
 ## 📦 Moyen terme

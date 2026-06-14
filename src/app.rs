@@ -72,6 +72,7 @@ impl Setting {
 pub enum Mode {
     Normal,
     Editing,
+    Confirming,
 }
 
 pub struct App {

@@ -5,6 +5,12 @@ use crate::app::{App, Setting, SettingKind};
 const BLOCK_START: &str = "# homebrewconfig BEGIN";
 const BLOCK_END: &str = "# homebrewconfig END";
 
+/// The export block that `apply_config` would write, for display in the
+/// confirmation popup before any disk write happens.
+pub fn preview_block(app: &App) -> String {
+    generate_block(&app.settings)
+}
+
 pub fn apply_config(app: &App) -> Result<(), String> {
     let path = &app.shell_profile;
 
