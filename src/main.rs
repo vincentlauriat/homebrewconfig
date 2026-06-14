@@ -80,6 +80,7 @@ fn run<B: ratatui::backend::Backend>(
                     }
                     Mode::Editing => handle_editing(app, key),
                     Mode::Confirming => handle_confirm(app, key),
+                    Mode::Filtering => handle_filter(app, key),
                 }
                 if app.message.is_some() && !had_message {
                     message_set_at = Some(Instant::now());
@@ -108,10 +109,21 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char(' ') => app.toggle_current(),
         KeyCode::Enter => app.start_editing(),
         KeyCode::Char('r') => app.reset(),
+        KeyCode::Char('/') => app.start_filter(),
         KeyCode::Char('a') => app.mode = Mode::Confirming,
         _ => {}
     }
     false
+}
+
+fn handle_filter(app: &mut App, key: KeyEvent) {
+    match key.code {
+        KeyCode::Enter => app.confirm_filter(),
+        KeyCode::Esc => app.clear_filter(),
+        KeyCode::Backspace => app.filter_backspace(),
+        KeyCode::Char(c) => app.filter_push(c),
+        _ => {}
+    }
 }
 
 fn handle_confirm(app: &mut App, key: KeyEvent) {
