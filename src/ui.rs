@@ -264,6 +264,18 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect) {
         ]));
     }
 
+    if let Some(exists) = setting.path_status(|p| std::path::Path::new(p).exists()) {
+        let (mark, label, color) = if exists {
+            ("✓", "path exists", ON_COLOR)
+        } else {
+            ("⚠", "path not found", Color::Rgb(230, 160, 60))
+        };
+        lines.push(Line::from(vec![
+            Span::styled("Path: ", Style::default().fg(OFF_COLOR)),
+            Span::styled(format!("{} {}", mark, label), Style::default().fg(color)),
+        ]));
+    }
+
     if setting.modified {
         lines.push(Line::from(""));
         lines.push(Line::from(Span::styled(

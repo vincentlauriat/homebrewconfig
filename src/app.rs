@@ -26,12 +26,31 @@ pub struct Setting {
     /// Human-readable Homebrew default, shown in the detail pane. Empty when
     /// there is no meaningful documented default.
     pub default_hint: &'static str,
+    /// Whether `str_val` is expected to be a filesystem path (enables
+    /// existence checking in the UI).
+    pub is_path: bool,
 }
 
 impl Setting {
     fn with_default(mut self, hint: &'static str) -> Self {
         self.default_hint = hint;
         self
+    }
+
+    fn with_path_flag(mut self) -> Self {
+        self.is_path = true;
+        self
+    }
+
+    /// For a path setting with a value, report whether the path exists, using
+    /// the injected `exists` predicate. `None` when this is not a path or has
+    /// no value to check.
+    pub fn path_status(&self, exists: impl Fn(&str) -> bool) -> Option<bool> {
+        if self.is_path && !self.str_val.is_empty() {
+            Some(exists(&self.str_val))
+        } else {
+            None
+        }
     }
 }
 
@@ -346,6 +365,7 @@ impl App {
             category,
             modified: false,
             default_hint: "",
+            is_path: false,
         };
         vec![
             make(
@@ -433,28 +453,32 @@ impl App {
                 "Directory for cached downloads",
                 SettingKind::Str,
                 "Directories",
-            ),
+            )
+            .with_path_flag(),
             make(
                 "Cellar",
                 "HOMEBREW_CELLAR",
                 "Directory for installed formula files",
                 SettingKind::Str,
                 "Directories",
-            ),
+            )
+            .with_path_flag(),
             make(
                 "Logs",
                 "HOMEBREW_LOGS",
                 "Directory for brew logs",
                 SettingKind::Str,
                 "Directories",
-            ),
+            )
+            .with_path_flag(),
             make(
                 "Temp",
                 "HOMEBREW_TEMP",
                 "Temp directory used during builds",
                 SettingKind::Str,
                 "Directories",
-            ),
+            )
+            .with_path_flag(),
             make(
                 "Editor",
                 "HOMEBREW_EDITOR",
@@ -591,6 +615,7 @@ mod tests {
             category: "Test",
             modified: true,
             default_hint: "",
+            is_path: false,
         }
     }
 
@@ -773,5 +798,39 @@ mod tests {
         app.set_var("HOMEBREW_NO_ANALYTICS", Some("1".to_string()))
             .unwrap();
         assert!(!find(&app, "HOMEBREW_NO_ANALYTICS").bool_val);
+    }
+
+    // ---- path validation ----
+
+    #[test]
+    fn directory_settings_are_paths() {
+        let app = App::new();
+        for var in [
+            "HOMEBREW_CACHE",
+            "HOMEBREW_CELLAR",
+            "HOMEBREW_LOGS",
+            "HOMEBREW_TEMP",
+        ] {
+            assert!(find(&app, var).is_path, "{} should be a path", var);
+        }
+    }
+
+    #[test]
+    fn path_status_reflects_existence_predicate() {
+        let mut app = App::new();
+        app.set_var("HOMEBREW_CACHE", Some("/some/dir".to_string()))
+            .unwrap();
+        let cache = find(&app, "HOMEBREW_CACHE");
+        assert_eq!(cache.path_status(|_| true), Some(true));
+        assert_eq!(cache.path_status(|_| false), Some(false));
+    }
+
+    #[test]
+    fn path_status_is_none_for_non_paths_and_empty_values() {
+        let app = App::new();
+        // A non-path setting never reports a path status.
+        assert_eq!(find(&app, "HOMEBREW_EDITOR").path_status(|_| true), None);
+        // A path setting with no value has nothing to check.
+        assert_eq!(find(&app, "HOMEBREW_CACHE").path_status(|_| true), None);
     }
 }

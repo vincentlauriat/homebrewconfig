@@ -44,7 +44,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 ## 🎯 Long terme / idées
 
 - [ ] Lire les variables réellement reconnues via `brew --env` pour rester synchro avec Homebrew
-- [ ] **Validation sémantique** des chemins (Cache/Cellar/Logs/Temp existent ?)
+- [x] **Validation sémantique** des chemins (Cache/Cellar/Logs/Temp) : statut « ✓ path exists / ⚠ path not found » dans le détail (`path_status` testable, 3 tests)
 - [ ] **Thèmes** de couleurs configurables
 - [ ] Publication sur **crates.io** et formule **Homebrew** (`brew install homebrewconfig`)
 - [ ] Page de **man** / complétion shell
