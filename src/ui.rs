@@ -59,7 +59,10 @@ fn render_header(f: &mut Frame, app: &App, area: Rect) {
             "🍺 homebrewconfig",
             Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
         ),
-        Span::styled(" v0.1.0", Style::default().fg(BREW_AMBER)),
+        Span::styled(
+            concat!(" v", env!("CARGO_PKG_VERSION")),
+            Style::default().fg(BREW_AMBER),
+        ),
     ]);
     let mut subtitle_spans = vec![
         Span::styled("Profile: ", Style::default().fg(OFF_COLOR)),
