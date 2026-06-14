@@ -6,7 +6,7 @@ A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment va
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║              🍺 homebrewconfig v0.1.0                        ║
+║              🍺 homebrewconfig v0.2.0                        ║
 ║              Profile: ~/.zprofile                            ║
 ╚══════════════════════════════════════════════════════════════╝
 ┌─────────────────────────────────┐┌────────────────────────────┐
