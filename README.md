@@ -55,10 +55,21 @@ cargo install --path .
 ## Usage
 
 ```bash
-homebrewconfig
+homebrewconfig                      # auto-detect the shell profile
+homebrewconfig --profile ~/.zshrc   # write to a specific profile
 ```
 
-Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply. A confirmation popup previews the exact export block that will be written; press `y`/`Enter` to confirm or `n`/`Esc` to cancel. The tool writes the block to your shell profile (e.g. `~/.zprofile`), backs up the previous version to `~/.zprofile.bak`, and leaves the rest of the file untouched.
+Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply. A confirmation popup previews the exact export block that will be written; press `y`/`Enter` to confirm or `n`/`Esc` to cancel. The tool writes the block to your shell profile, backs up the previous version to `<profile>.bak`, and leaves the rest of the file untouched.
+
+Press `p` at any time to cycle the write target between the candidate profiles for your shell.
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `-p`, `--profile <PATH>` | Write to this profile instead of the auto-detected one |
+| `-h`, `--help` | Print help |
+| `-V`, `--version` | Print version |
 
 ## Keybindings
 
@@ -70,6 +81,7 @@ Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply.
 | `Enter` | Edit a string or number setting |
 | `a` | Apply all changes (shows a confirmation + preview first) |
 | `r` | Reset to current environment values |
+| `p` | Cycle the target shell profile |
 | `?` | Toggle help |
 | `Esc` | Close help / quit |
 | `q` | Quit |
@@ -125,11 +137,22 @@ Running the tool again replaces only this block, leaving everything else in your
 
 ## Shell detection
 
-| Shell | Profile written |
-|-------|----------------|
-| zsh | `~/.zprofile` |
-| bash | `~/.bash_profile` |
+The target profile is auto-detected from `$SHELL`. For each shell a list of
+candidate files is considered, in preference order, and the tool picks:
+
+1. the candidate that **already contains** a homebrewconfig block (so re-runs
+   stay in the same file), otherwise
+2. the first candidate that **already exists**, otherwise
+3. the first (preferred) candidate.
+
+| Shell | Candidates (preferred first) |
+|-------|------------------------------|
+| zsh | `~/.zshrc`, `~/.zprofile` |
+| bash | `~/.bashrc`, `~/.bash_profile`, `~/.profile` |
 | fish | `~/.config/fish/config.fish` |
+
+Override the choice entirely with `--profile <PATH>`, or cycle through the
+candidates live with `p` inside the TUI.
 
 ## Documentation
 

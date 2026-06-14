@@ -3,6 +3,7 @@ mod config;
 mod ui;
 
 use std::io;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{
@@ -21,13 +22,18 @@ use app::{App, Mode, SettingKind};
 const MESSAGE_TIMEOUT: Duration = Duration::from_secs(3);
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let profile_override = match parse_args() {
+        ArgAction::Run(p) => p,
+        ArgAction::Exit => return Ok(()),
+    };
+
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::new();
+    let mut app = App::with_profile(profile_override);
     let result = run(&mut terminal, &mut app);
 
     disable_raw_mode()?;
@@ -45,6 +51,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+enum ArgAction {
+    Run(Option<PathBuf>),
+    Exit,
+}
+
+fn parse_args() -> ArgAction {
+    let mut args = std::env::args().skip(1);
+    let Some(arg) = args.next() else {
+        return ArgAction::Run(None);
+    };
+    match arg.as_str() {
+        "-h" | "--help" => {
+            print_help();
+            ArgAction::Exit
+        }
+        "-V" | "--version" => {
+            println!("homebrewconfig {}", env!("CARGO_PKG_VERSION"));
+            ArgAction::Exit
+        }
+        "-p" | "--profile" => match args.next() {
+            Some(path) => ArgAction::Run(Some(PathBuf::from(path))),
+            None => {
+                eprintln!("error: --profile requires a path argument");
+                ArgAction::Exit
+            }
+        },
+        other => {
+            if let Some(rest) = other.strip_prefix("--profile=") {
+                ArgAction::Run(Some(PathBuf::from(rest)))
+            } else {
+                eprintln!("error: unknown argument '{}'. Try --help.", other);
+                ArgAction::Exit
+            }
+        }
+    }
+}
+
+fn print_help() {
+    println!(
+        "homebrewconfig {}\n\
+         A TUI for configuring Homebrew environment variables.\n\n\
+         USAGE:\n    \
+         homebrewconfig [OPTIONS]\n\n\
+         OPTIONS:\n    \
+         -p, --profile <PATH>   Write to this shell profile instead of the auto-detected one\n    \
+         -h, --help             Print this help\n    \
+         -V, --version          Print version\n\n\
+         Inside the TUI, press 'p' to cycle the write target and '?' for all keys.",
+        env!("CARGO_PKG_VERSION")
+    );
 }
 
 fn run<B: ratatui::backend::Backend>(
@@ -110,6 +168,7 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Enter => app.start_editing(),
         KeyCode::Char('r') => app.reset(),
         KeyCode::Char('/') => app.start_filter(),
+        KeyCode::Char('p') => app.cycle_profile(),
         KeyCode::Char('a') => app.mode = Mode::Confirming,
         _ => {}
     }

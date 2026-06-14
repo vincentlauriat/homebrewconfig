@@ -1,9 +1,18 @@
 use std::fs;
+use std::path::Path;
 
 use crate::app::{App, Setting, SettingKind};
 
 const BLOCK_START: &str = "# homebrewconfig BEGIN";
 const BLOCK_END: &str = "# homebrewconfig END";
+
+/// Whether `path` already contains a homebrewconfig-managed block.
+/// Missing or unreadable files count as "no block".
+pub fn file_contains_block(path: &Path) -> bool {
+    fs::read_to_string(path)
+        .map(|c| c.contains(BLOCK_START))
+        .unwrap_or(false)
+}
 
 /// The export block that `apply_config` would write, for display in the
 /// confirmation popup before any disk write happens.
