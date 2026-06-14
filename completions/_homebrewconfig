@@ -1,0 +1,19 @@
+#compdef homebrewconfig
+# zsh completion for homebrewconfig
+
+_homebrewconfig() {
+    _arguments -s \
+        '(-p --profile)'{-p,--profile}'[Write to this shell profile]:profile:_files' \
+        '*--set[Set a Homebrew variable]:assignment (VAR=VALUE):' \
+        '*--unset[Reset a variable to its default]:variable name:' \
+        '--import-preset[Load settings from a TOML preset]:preset file:_files' \
+        '--export-preset[Write current settings to a TOML preset]:preset file:_files' \
+        '--apply[Write the profile without opening the UI]' \
+        '--dry-run[Print the export block, then exit]' \
+        '--list[Print all settings and values, then exit]' \
+        '--json[Print the full state as JSON, then exit]' \
+        '(-h --help)'{-h,--help}'[Print help]' \
+        '(-V --version)'{-V,--version}'[Print version]'
+}
+
+_homebrewconfig "$@"
