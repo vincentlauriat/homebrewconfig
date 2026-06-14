@@ -38,6 +38,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [x] **Cible de profil configurable** : auto-détection (fichier contenant déjà le bloc → existant → préféré), flag `--profile <PATH>`, et touche `p` pour cycler dans l'UI
 - [x] **Mode CLI non interactif** : `--set VAR=VALUE`, `--unset VAR`, `--apply`, `--dry-run`, `--list` (scriptable, 7 tests) — début du Jalon 3
 - [x] **Export/import** de presets TOML (`--export-preset` / `--import-preset`, baseline + override par `--set`, vars inconnues ignorées avec warning, 4 tests)
+- [x] **Sortie `--json`** de l'état courant (typée par kind, pour `jq`/intégration machine, 3 tests) — clôt le Jalon 3
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
 
 ## 🎯 Long terme / idées

@@ -1,6 +1,7 @@
 mod app;
 mod config;
 mod preset;
+mod report;
 mod ui;
 
 use std::fs;
@@ -74,6 +75,7 @@ struct Cli {
     apply: bool,
     dry_run: bool,
     list: bool,
+    json: bool,
 }
 
 impl Cli {
@@ -86,6 +88,7 @@ impl Cli {
             || self.apply
             || self.dry_run
             || self.list
+            || self.json
     }
 }
 
@@ -139,6 +142,7 @@ fn parse_args() -> ArgAction {
             "--apply" => cli.apply = true,
             "--dry-run" => cli.dry_run = true,
             "--list" => cli.list = true,
+            "--json" => cli.json = true,
             other => {
                 if let Some(rest) = other.strip_prefix("--profile=") {
                     cli.profile = Some(PathBuf::from(rest));
@@ -197,6 +201,10 @@ fn run_batch(cli: &Cli) -> Result<(), String> {
         println!("Wrote preset to {}", path.display());
     }
 
+    if cli.json {
+        println!("{}", report::state_json(&app)?);
+    }
+
     if cli.list {
         for s in &app.settings {
             println!("{:<28} {:<34} {}", s.name, s.env_var, s.value_display());
@@ -231,6 +239,7 @@ fn print_help() {
              --apply            Write the profile without opening the UI\n    \
              --dry-run          Print the export block that would be written, then exit\n    \
              --list             Print all settings and their current values, then exit\n    \
+             --json             Print the full state as JSON, then exit\n    \
          -h, --help             Print this help\n    \
          -V, --version          Print version\n\n\
          With no batch flag, the interactive TUI launches. Inside it, press 'p'\n\
