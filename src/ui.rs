@@ -495,6 +495,7 @@ fn render_help_popup(f: &mut Frame) {
         )),
         key("a", "Apply (asks to confirm + preview)"),
         key("r", "Reset to current environment"),
+        key("p", "Cycle the target shell profile"),
         key("?", "Toggle this help"),
         key("q", "Quit"),
         Line::from(""),

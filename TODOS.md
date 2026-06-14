@@ -34,6 +34,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [x] **CI GitHub Actions** : `cargo fmt --check`, `cargo clippy -D warnings`, `cargo build`, `cargo test` (`.github/workflows/ci.yml`)
 - [x] **Recherche / filtre** des réglages (`/` ; matche name/env_var/category/description, navigation et rendu filtrés, 5 tests)
 - [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
+- [x] **Cible de profil configurable** : auto-détection (fichier contenant déjà le bloc → existant → préféré), flag `--profile <PATH>`, et touche `p` pour cycler dans l'UI
 - [ ] **Mode CLI non interactif** (`--set HOMEBREW_NO_ANALYTICS=1`, `--apply`) pour scripting
 - [ ] **Export/import** de presets (profils partagés en JSON/TOML)
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
@@ -50,4 +51,4 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 
 - [ ] `cursor_pos` dans la popup d'édition ne gère pas le scroll horizontal si la valeur dépasse la largeur du champ
 - [ ] Pas de gestion d'erreur si `$SHELL` est inhabituel (fallback silencieux sur bash)
-- [ ] `detect_shell_profile` suppose `~/.zprofile` mais certains setups zsh utilisent `~/.zshrc`
+- [x] ~~`detect_shell_profile` suppose `~/.zprofile`~~ → résolu : `.zshrc` préféré, détection du fichier contenant déjà le bloc, override `--profile` + cycle `p`

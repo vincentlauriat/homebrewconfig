@@ -1,7 +1,9 @@
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use ratatui::widgets::ListState;
+
+use crate::config;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SettingKind {
@@ -93,16 +95,30 @@ pub struct App {
     pub cursor_pos: usize,
     pub filter: String,
     pub shell_profile: PathBuf,
+    pub profile_candidates: Vec<PathBuf>,
     pub message: Option<(String, bool)>,
     pub show_help: bool,
 }
 
 impl App {
+    // Convenience constructor used by tests; the binary entry point goes
+    // through `with_profile` to honour the `--profile` flag.
+    #[allow(dead_code)]
     pub fn new() -> Self {
+        Self::with_profile(None)
+    }
+
+    /// Build the app, optionally forcing a specific profile path (e.g. from a
+    /// `--profile` CLI flag). When `None`, the target is auto-detected.
+    pub fn with_profile(override_path: Option<PathBuf>) -> Self {
         let mut settings = Self::build_settings();
         for setting in &mut settings {
             setting.read_from_env();
         }
+        let candidates = Self::profile_candidates();
+        let shell_profile = override_path.unwrap_or_else(|| {
+            Self::pick_profile(&candidates, config::file_contains_block, |p| p.exists())
+        });
         let mut app = App {
             settings,
             selected: 0,
@@ -111,12 +127,31 @@ impl App {
             input: String::new(),
             cursor_pos: 0,
             filter: String::new(),
-            shell_profile: Self::detect_shell_profile(),
+            shell_profile,
+            profile_candidates: candidates,
             message: None,
             show_help: false,
         };
         app.sync_list_state();
         app
+    }
+
+    /// Cycle the write target through the detected candidate profiles.
+    pub fn cycle_profile(&mut self) {
+        if self.profile_candidates.is_empty() {
+            return;
+        }
+        let pos = self
+            .profile_candidates
+            .iter()
+            .position(|p| p == &self.shell_profile);
+        let next = match pos {
+            Some(i) => (i + 1) % self.profile_candidates.len(),
+            None => 0,
+        };
+        self.shell_profile = self.profile_candidates[next].clone();
+        let disp = self.shell_profile.display().to_string();
+        self.message = Some((format!("Target profile: {}", disp), false));
     }
 
     /// Indices into `settings` that match the current filter, in order.
@@ -445,16 +480,45 @@ impl App {
         ]
     }
 
-    fn detect_shell_profile() -> PathBuf {
+    /// Candidate profile files for the current shell, in preference order.
+    fn profile_candidates() -> Vec<PathBuf> {
         let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         let shell = env::var("SHELL").unwrap_or_default();
         if shell.contains("zsh") {
-            home.join(".zprofile")
+            vec![home.join(".zshrc"), home.join(".zprofile")]
         } else if shell.contains("fish") {
-            home.join(".config").join("fish").join("config.fish")
+            vec![home.join(".config").join("fish").join("config.fish")]
         } else {
-            home.join(".bash_profile")
+            vec![
+                home.join(".bashrc"),
+                home.join(".bash_profile"),
+                home.join(".profile"),
+            ]
         }
+    }
+
+    /// Choose which candidate to write to:
+    /// 1. one that already holds our managed block (cross-file idempotence),
+    /// 2. otherwise the first that already exists,
+    /// 3. otherwise the first (preferred) candidate.
+    ///
+    /// `has_block` and `exists` are injected so the policy is unit-testable
+    /// without touching the filesystem.
+    fn pick_profile(
+        candidates: &[PathBuf],
+        has_block: impl Fn(&Path) -> bool,
+        exists: impl Fn(&Path) -> bool,
+    ) -> PathBuf {
+        if let Some(p) = candidates.iter().find(|p| has_block(p)) {
+            return p.clone();
+        }
+        if let Some(p) = candidates.iter().find(|p| exists(p)) {
+            return p.clone();
+        }
+        candidates
+            .first()
+            .cloned()
+            .unwrap_or_else(|| PathBuf::from(".profile"))
     }
 
     /// Map `selected` to its visual row in the rendered list, accounting for
@@ -598,5 +662,46 @@ mod tests {
         assert!(app.filter.is_empty());
         assert_eq!(app.mode, Mode::Normal);
         assert_eq!(app.visible().len(), app.settings.len());
+    }
+
+    // ---- profile target selection ----
+
+    fn zsh_candidates() -> Vec<PathBuf> {
+        vec![PathBuf::from("/h/.zshrc"), PathBuf::from("/h/.zprofile")]
+    }
+
+    #[test]
+    fn pick_profile_prefers_file_with_existing_block() {
+        let c = zsh_candidates();
+        // .zprofile holds our block even though both exist -> it wins.
+        let chosen = App::pick_profile(&c, |p| p.ends_with(".zprofile"), |_| true);
+        assert_eq!(chosen, PathBuf::from("/h/.zprofile"));
+    }
+
+    #[test]
+    fn pick_profile_falls_back_to_first_existing() {
+        let c = zsh_candidates();
+        // No block anywhere; only .zprofile exists on disk.
+        let chosen = App::pick_profile(&c, |_| false, |p| p.ends_with(".zprofile"));
+        assert_eq!(chosen, PathBuf::from("/h/.zprofile"));
+    }
+
+    #[test]
+    fn pick_profile_defaults_to_first_candidate() {
+        let c = zsh_candidates();
+        // Nothing exists and no block -> prefer the first candidate (.zshrc).
+        let chosen = App::pick_profile(&c, |_| false, |_| false);
+        assert_eq!(chosen, PathBuf::from("/h/.zshrc"));
+    }
+
+    #[test]
+    fn cycle_profile_rotates_through_candidates() {
+        let mut app = App::new();
+        app.profile_candidates = zsh_candidates();
+        app.shell_profile = PathBuf::from("/h/.zshrc");
+        app.cycle_profile();
+        assert_eq!(app.shell_profile, PathBuf::from("/h/.zprofile"));
+        app.cycle_profile();
+        assert_eq!(app.shell_profile, PathBuf::from("/h/.zshrc"));
     }
 }
