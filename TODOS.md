@@ -36,7 +36,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [x] **Recherche / filtre** des réglages (`/` ; matche name/env_var/category/description, navigation et rendu filtrés, 5 tests)
 - [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
 - [x] **Cible de profil configurable** : auto-détection (fichier contenant déjà le bloc → existant → préféré), flag `--profile <PATH>`, et touche `p` pour cycler dans l'UI
-- [ ] **Mode CLI non interactif** (`--set HOMEBREW_NO_ANALYTICS=1`, `--apply`) pour scripting
+- [x] **Mode CLI non interactif** : `--set VAR=VALUE`, `--unset VAR`, `--apply`, `--dry-run`, `--list` (scriptable, 7 tests) — début du Jalon 3
 - [ ] **Export/import** de presets (profils partagés en JSON/TOML)
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
 

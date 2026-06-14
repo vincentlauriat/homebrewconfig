@@ -69,8 +69,34 @@ Press `p` at any time to cycle the write target between the candidate profiles f
 | Flag | Description |
 |------|-------------|
 | `-p`, `--profile <PATH>` | Write to this profile instead of the auto-detected one |
+| `--set VAR=VALUE` | Set a Homebrew variable (repeatable; non-interactive) |
+| `--unset VAR` | Reset a variable to its Homebrew default (repeatable) |
+| `--apply` | Write the profile without opening the UI |
+| `--dry-run` | Print the export block that would be written, then exit |
+| `--list` | Print all settings and their current values, then exit |
 | `-h`, `--help` | Print help |
 | `-V`, `--version` | Print version |
+
+### Non-interactive use
+
+Any of `--set`, `--unset`, `--apply`, `--dry-run` or `--list` runs without the
+TUI, so the tool is scriptable:
+
+```bash
+# Preview what would be written, without touching anything
+homebrewconfig --set HOMEBREW_NO_ANALYTICS=1 --dry-run
+
+# Apply changes straight to the profile (backs up to <profile>.bak)
+homebrewconfig --set HOMEBREW_NO_ANALYTICS=1 \
+               --set HOMEBREW_CLEANUP_MAX_AGE_DAYS=30 --apply
+
+# Reset a variable to its default and inspect the result
+homebrewconfig --unset HOMEBREW_CLEANUP_MAX_AGE_DAYS --list
+```
+
+`VAR` is the Homebrew environment variable name. For boolean `HOMEBREW_NO_*`
+variables, `--set` makes the variable present (feature off) and `--unset`
+removes it (feature on), mirroring how Homebrew reads them.
 
 ## Keybindings
 
