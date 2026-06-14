@@ -81,6 +81,7 @@ pub enum Mode {
     Normal,
     Editing,
     Confirming,
+    Filtering,
 }
 
 pub struct App {
@@ -90,6 +91,7 @@ pub struct App {
     pub mode: Mode,
     pub input: String,
     pub cursor_pos: usize,
+    pub filter: String,
     pub shell_profile: PathBuf,
     pub message: Option<(String, bool)>,
     pub show_help: bool,
@@ -101,22 +103,81 @@ impl App {
         for setting in &mut settings {
             setting.read_from_env();
         }
-        let mut list_state = ListState::default();
-        list_state.select(Some(Self::compute_list_index(&settings, 0)));
-        App {
+        let mut app = App {
             settings,
             selected: 0,
-            list_state,
+            list_state: ListState::default(),
             mode: Mode::Normal,
             input: String::new(),
             cursor_pos: 0,
+            filter: String::new(),
             shell_profile: Self::detect_shell_profile(),
             message: None,
             show_help: false,
+        };
+        app.sync_list_state();
+        app
+    }
+
+    /// Indices into `settings` that match the current filter, in order.
+    /// An empty filter shows everything.
+    pub fn visible(&self) -> Vec<usize> {
+        if self.filter.is_empty() {
+            return (0..self.settings.len()).collect();
         }
+        let needle = self.filter.to_lowercase();
+        self.settings
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| {
+                s.name.to_lowercase().contains(&needle)
+                    || s.env_var.to_lowercase().contains(&needle)
+                    || s.category.to_lowercase().contains(&needle)
+                    || s.description.to_lowercase().contains(&needle)
+            })
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    pub fn start_filter(&mut self) {
+        self.mode = Mode::Filtering;
+    }
+
+    pub fn filter_push(&mut self, c: char) {
+        self.filter.push(c);
+        self.ensure_selected_visible();
+    }
+
+    pub fn filter_backspace(&mut self) {
+        self.filter.pop();
+        self.ensure_selected_visible();
+    }
+
+    /// Keep the filter but leave filtering mode.
+    pub fn confirm_filter(&mut self) {
+        self.mode = Mode::Normal;
+        self.ensure_selected_visible();
+    }
+
+    /// Drop the filter entirely and leave filtering mode.
+    pub fn clear_filter(&mut self) {
+        self.filter.clear();
+        self.mode = Mode::Normal;
+        self.ensure_selected_visible();
+    }
+
+    fn ensure_selected_visible(&mut self) {
+        let vis = self.visible();
+        if !vis.is_empty() && !vis.contains(&self.selected) {
+            self.selected = vis[0];
+        }
+        self.sync_list_state();
     }
 
     pub fn toggle_current(&mut self) {
+        if !self.visible().contains(&self.selected) {
+            return;
+        }
         let setting = &mut self.settings[self.selected];
         if matches!(setting.kind, SettingKind::Bool { .. }) {
             setting.bool_val = !setting.bool_val;
@@ -125,6 +186,9 @@ impl App {
     }
 
     pub fn start_editing(&mut self) {
+        if !self.visible().contains(&self.selected) {
+            return;
+        }
         let setting = &self.settings[self.selected];
         match &setting.kind {
             SettingKind::Str => {
@@ -179,22 +243,23 @@ impl App {
     }
 
     pub fn select_next(&mut self) {
-        if self.settings.is_empty() {
+        let vis = self.visible();
+        if vis.is_empty() {
             return;
         }
-        self.selected = (self.selected + 1) % self.settings.len();
+        let pos = vis.iter().position(|&i| i == self.selected).unwrap_or(0);
+        self.selected = vis[(pos + 1) % vis.len()];
         self.sync_list_state();
     }
 
     pub fn select_prev(&mut self) {
-        if self.settings.is_empty() {
+        let vis = self.visible();
+        if vis.is_empty() {
             return;
         }
-        self.selected = if self.selected == 0 {
-            self.settings.len() - 1
-        } else {
-            self.selected - 1
-        };
+        let pos = vis.iter().position(|&i| i == self.selected).unwrap_or(0);
+        let prev = if pos == 0 { vis.len() - 1 } else { pos - 1 };
+        self.selected = vis[prev];
         self.sync_list_state();
     }
 
@@ -392,10 +457,14 @@ impl App {
         }
     }
 
-    fn compute_list_index(settings: &[Setting], setting_idx: usize) -> usize {
-        let mut list_index = 0;
+    /// Map `selected` to its visual row in the rendered list, accounting for
+    /// the category headers and blank separators inserted between groups.
+    fn sync_list_state(&mut self) {
+        let vis = self.visible();
+        let mut list_index = 0usize;
         let mut current_category: Option<&str> = None;
-        for (i, setting) in settings.iter().enumerate() {
+        for &i in &vis {
+            let setting = &self.settings[i];
             if current_category != Some(setting.category) {
                 if current_category.is_some() {
                     list_index += 1;
@@ -403,17 +472,13 @@ impl App {
                 list_index += 1;
                 current_category = Some(setting.category);
             }
-            if i == setting_idx {
-                return list_index;
+            if i == self.selected {
+                self.list_state.select(Some(list_index));
+                return;
             }
             list_index += 1;
         }
-        list_index.saturating_sub(1)
-    }
-
-    fn sync_list_state(&mut self) {
-        let idx = Self::compute_list_index(&self.settings, self.selected);
-        self.list_state.select(Some(idx));
+        self.list_state.select(Some(0));
     }
 }
 
@@ -480,5 +545,58 @@ mod tests {
         assert!(s.modified);
         s.apply_env_value(None);
         assert!(!s.modified);
+    }
+
+    // ---- filtering ----
+
+    #[test]
+    fn empty_filter_shows_all_settings() {
+        let app = App::new();
+        assert_eq!(app.visible().len(), app.settings.len());
+    }
+
+    #[test]
+    fn filter_narrows_to_matching_category() {
+        let mut app = App::new();
+        for c in "network".chars() {
+            app.filter_push(c);
+        }
+        let vis = app.visible();
+        assert!(!vis.is_empty());
+        assert!(vis.iter().all(|&i| app.settings[i].category == "Network"));
+    }
+
+    #[test]
+    fn filter_moves_selection_into_visible_set() {
+        let mut app = App::new();
+        app.selected = 0; // Analytics (Privacy) — not in the Network group
+        for c in "network".chars() {
+            app.filter_push(c);
+        }
+        assert!(app.visible().contains(&app.selected));
+        assert_eq!(app.settings[app.selected].category, "Network");
+    }
+
+    #[test]
+    fn select_next_stays_within_filtered_set() {
+        let mut app = App::new();
+        for c in "network".chars() {
+            app.filter_push(c);
+        }
+        let vis = app.visible();
+        app.select_next();
+        assert!(vis.contains(&app.selected));
+    }
+
+    #[test]
+    fn clear_filter_restores_full_list() {
+        let mut app = App::new();
+        for c in "network".chars() {
+            app.filter_push(c);
+        }
+        app.clear_filter();
+        assert!(app.filter.is_empty());
+        assert_eq!(app.mode, Mode::Normal);
+        assert_eq!(app.visible().len(), app.settings.len());
     }
 }

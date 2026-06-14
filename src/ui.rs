@@ -84,10 +84,19 @@ fn render_body(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn render_settings_list(f: &mut Frame, app: &mut App, area: Rect) {
+    let visible = app.visible();
     let mut items: Vec<ListItem> = Vec::new();
     let mut current_category: Option<&str> = None;
 
-    for (i, setting) in app.settings.iter().enumerate() {
+    if visible.is_empty() {
+        items.push(ListItem::new(Line::from(Span::styled(
+            "  (no matches)",
+            Style::default().fg(OFF_COLOR),
+        ))));
+    }
+
+    for &i in &visible {
+        let setting = &app.settings[i];
         if current_category != Some(setting.category) {
             if current_category.is_some() {
                 items.push(ListItem::new(Line::from("")));
@@ -154,9 +163,14 @@ fn render_settings_list(f: &mut Frame, app: &mut App, area: Rect) {
         items.push(ListItem::new(Line::from(spans)).style(line_style));
     }
 
+    let title = if app.filter.is_empty() {
+        " Settings ".to_string()
+    } else {
+        format!(" Settings (filter: {}) ", app.filter)
+    };
     let block = Block::default()
         .title(Span::styled(
-            " Settings ",
+            title,
             Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
         ))
         .borders(Borders::ALL)
@@ -167,6 +181,27 @@ fn render_settings_list(f: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn render_detail(f: &mut Frame, app: &App, area: Rect) {
+    let detail_block = || {
+        Block::default()
+            .title(Span::styled(
+                " Detail ",
+                Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+            ))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(BREW_AMBER))
+    };
+
+    if !app.visible().contains(&app.selected) {
+        let para = Paragraph::new(Line::from(Span::styled(
+            "No setting matches the filter.",
+            Style::default().fg(OFF_COLOR),
+        )))
+        .block(detail_block())
+        .wrap(Wrap { trim: true });
+        f.render_widget(para, area);
+        return;
+    }
+
     let setting = &app.settings[app.selected];
 
     let mut lines: Vec<Line> = vec![
@@ -219,15 +254,9 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect) {
         )));
     }
 
-    let block = Block::default()
-        .title(Span::styled(
-            " Detail ",
-            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
-        ))
-        .borders(Borders::ALL)
-        .border_style(Style::default().fg(BREW_AMBER));
-
-    let para = Paragraph::new(lines).block(block).wrap(Wrap { trim: true });
+    let para = Paragraph::new(lines)
+        .block(detail_block())
+        .wrap(Wrap { trim: true });
     f.render_widget(para, area);
 }
 
@@ -236,7 +265,29 @@ fn render_statusbar(f: &mut Frame, app: &App, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(BREW_AMBER));
 
-    let line = if let Some((msg, is_error)) = &app.message {
+    let key = |k: &'static str| {
+        Span::styled(
+            k,
+            Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+        )
+    };
+    let txt = |t: &'static str| Span::styled(t, Style::default().fg(Color::Gray));
+
+    let line = if app.mode == Mode::Filtering {
+        Line::from(vec![
+            Span::styled(
+                "Filter: ",
+                Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(app.filter.clone(), Style::default().fg(Color::White)),
+            Span::styled("▌", Style::default().fg(BREW_GOLD)),
+            txt("   "),
+            key("[Enter]"),
+            txt(" apply  "),
+            key("[Esc]"),
+            txt(" clear"),
+        ])
+    } else if let Some((msg, is_error)) = &app.message {
         let color = if *is_error {
             Color::Rgb(230, 90, 90)
         } else {
@@ -247,20 +298,15 @@ fn render_statusbar(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(color).add_modifier(Modifier::BOLD),
         ))
     } else {
-        let key = |k: &'static str| {
-            Span::styled(
-                k,
-                Style::default().fg(BREW_GOLD).add_modifier(Modifier::BOLD),
-            )
-        };
-        let txt = |t: &'static str| Span::styled(t, Style::default().fg(Color::Gray));
         Line::from(vec![
             key("[↑↓]"),
-            txt(" navigate  "),
+            txt(" nav  "),
             key("[Space]"),
             txt(" toggle  "),
             key("[Enter]"),
             txt(" edit  "),
+            key("[/]"),
+            txt(" filter  "),
             key("[a]"),
             txt(" apply  "),
             key("[r]"),
@@ -429,6 +475,7 @@ fn render_help_popup(f: &mut Frame) {
         )),
         key("↑ / k", "Move selection up"),
         key("↓ / j", "Move selection down"),
+        key("/", "Filter settings by name/var"),
         Line::from(""),
         Line::from(Span::styled(
             "  Editing",

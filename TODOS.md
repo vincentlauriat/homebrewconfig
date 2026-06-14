@@ -32,7 +32,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 ## 📦 Moyen terme
 
 - [x] **CI GitHub Actions** : `cargo fmt --check`, `cargo clippy -D warnings`, `cargo build`, `cargo test` (`.github/workflows/ci.yml`)
-- [ ] **Recherche / filtre** des réglages (`/` pour filtrer par nom)
+- [x] **Recherche / filtre** des réglages (`/` ; matche name/env_var/category/description, navigation et rendu filtrés, 5 tests)
 - [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
 - [ ] **Mode CLI non interactif** (`--set HOMEBREW_NO_ANALYTICS=1`, `--apply`) pour scripting
 - [ ] **Export/import** de presets (profils partagés en JSON/TOML)

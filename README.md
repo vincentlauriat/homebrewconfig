@@ -31,6 +31,7 @@ A terminal UI for configuring [Homebrew](https://brew.sh) environment variables 
 ## Features
 
 - Browse and edit all Homebrew environment variables in one place
+- Filter settings instantly with `/` (matches name, variable, category and description)
 - Toggle boolean settings with `Space`, edit strings and numbers inline
 - Detects your shell automatically (zsh, bash, fish)
 - Writes a clean, idempotent block to your shell profile — re-running never duplicates exports
@@ -64,6 +65,7 @@ Navigate with arrow keys or `j`/`k`, make your changes, then press `a` to apply.
 | Key | Action |
 |-----|--------|
 | `↑` / `↓` or `k` / `j` | Move selection |
+| `/` | Filter settings by name, variable, category or description |
 | `Space` | Toggle a boolean setting |
 | `Enter` | Edit a string or number setting |
 | `a` | Apply all changes (shows a confirmation + preview first) |
