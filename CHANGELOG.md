@@ -18,6 +18,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Cache/Cellar/Logs/Temp directory settings.
 - Non-interactive CLI: `--set`, `--unset`, `--apply`, `--dry-run`, `--list`,
   `--json`, plus TOML presets via `--export-preset` / `--import-preset`.
+- `--brew-env` prints Homebrew's effective `HOMEBREW_*` environment via `brew`.
 - Man page (`man/homebrewconfig.1`) and bash/zsh/fish shell completions.
 - GitHub Actions CI (fmt, clippy, build, test) and a unit-test suite.
 

@@ -1,4 +1,5 @@
 mod app;
+mod brew;
 mod config;
 mod preset;
 mod report;
@@ -76,6 +77,7 @@ struct Cli {
     dry_run: bool,
     list: bool,
     json: bool,
+    brew_env: bool,
 }
 
 impl Cli {
@@ -89,6 +91,7 @@ impl Cli {
             || self.dry_run
             || self.list
             || self.json
+            || self.brew_env
     }
 }
 
@@ -143,6 +146,7 @@ fn parse_args() -> ArgAction {
             "--dry-run" => cli.dry_run = true,
             "--list" => cli.list = true,
             "--json" => cli.json = true,
+            "--brew-env" => cli.brew_env = true,
             other => {
                 if let Some(rest) = other.strip_prefix("--profile=") {
                     cli.profile = Some(PathBuf::from(rest));
@@ -175,6 +179,20 @@ fn arg_error(msg: &str) -> ArgAction {
 
 /// Run the requested non-interactive actions against a freshly-built app.
 fn run_batch(cli: &Cli) -> Result<(), String> {
+    if cli.brew_env {
+        let output = brew::brew_environment()
+            .ok_or("could not run 'brew' (is Homebrew installed and on PATH?)")?;
+        let pairs = brew::parse_brew_env(&output);
+        if pairs.is_empty() {
+            println!("No HOMEBREW_* variables reported by 'brew environment'.");
+        } else {
+            for (key, value) in pairs {
+                println!("{:<34} {}", key, value);
+            }
+        }
+        return Ok(());
+    }
+
     let mut app = App::with_profile(cli.profile.clone());
 
     // A preset is the baseline; explicit --set/--unset override it afterwards.
@@ -240,6 +258,7 @@ fn print_help() {
              --dry-run          Print the export block that would be written, then exit\n    \
              --list             Print all settings and their current values, then exit\n    \
              --json             Print the full state as JSON, then exit\n    \
+             --brew-env         Print Homebrew's effective HOMEBREW_* env (via brew), then exit\n    \
          -h, --help             Print this help\n    \
          -V, --version          Print version\n\n\
          With no batch flag, the interactive TUI launches. Inside it, press 'p'\n\

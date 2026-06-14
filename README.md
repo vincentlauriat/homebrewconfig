@@ -94,6 +94,7 @@ Press `p` at any time to cycle the write target between the candidate profiles f
 | `--dry-run` | Print the export block that would be written, then exit |
 | `--list` | Print all settings and their current values, then exit |
 | `--json` | Print the full state as JSON (for `jq` etc.), then exit |
+| `--brew-env` | Print Homebrew's effective `HOMEBREW_*` env (via `brew`), then exit |
 | `-h`, `--help` | Print help |
 | `-V`, `--version` | Print version |
 
