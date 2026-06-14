@@ -163,6 +163,7 @@ mod tests {
             category,
             modified: false,
             default_hint: "",
+            is_path: false,
         }
     }
 
