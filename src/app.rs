@@ -52,18 +52,24 @@ impl Setting {
     }
 
     fn read_from_env(&mut self) {
+        let raw = env::var(self.env_var).ok();
+        self.apply_env_value(raw);
+    }
+
+    /// Pure conversion from a raw environment value to this setting's typed
+    /// value. Split out from `read_from_env` so it can be unit-tested without
+    /// mutating the process environment.
+    fn apply_env_value(&mut self, raw: Option<String>) {
         match &self.kind {
             SettingKind::Bool { inverted } => {
-                let is_set = env::var(self.env_var).is_ok();
+                let is_set = raw.is_some();
                 self.bool_val = if *inverted { !is_set } else { is_set };
             }
             SettingKind::Str => {
-                self.str_val = env::var(self.env_var).unwrap_or_default();
+                self.str_val = raw.unwrap_or_default();
             }
             SettingKind::Num => {
-                self.num_val = env::var(self.env_var)
-                    .ok()
-                    .and_then(|v| v.trim().parse().ok());
+                self.num_val = raw.and_then(|v| v.trim().parse().ok());
             }
         }
         self.modified = false;
@@ -408,5 +414,71 @@ impl App {
     fn sync_list_state(&mut self) {
         let idx = Self::compute_list_index(&self.settings, self.selected);
         self.list_state.select(Some(idx));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setting(kind: SettingKind) -> Setting {
+        Setting {
+            name: "Test",
+            env_var: "HOMEBREW_TEST",
+            description: "test",
+            kind,
+            bool_val: false,
+            str_val: String::new(),
+            num_val: None,
+            category: "Test",
+            modified: true,
+        }
+    }
+
+    #[test]
+    fn inverted_bool_is_on_when_var_unset() {
+        let mut s = setting(SettingKind::Bool { inverted: true });
+        s.apply_env_value(None);
+        assert!(s.bool_val);
+        s.apply_env_value(Some("1".to_string()));
+        assert!(!s.bool_val);
+    }
+
+    #[test]
+    fn non_inverted_bool_is_on_when_var_set() {
+        let mut s = setting(SettingKind::Bool { inverted: false });
+        s.apply_env_value(None);
+        assert!(!s.bool_val);
+        // Even an empty string means the variable is present.
+        s.apply_env_value(Some(String::new()));
+        assert!(s.bool_val);
+    }
+
+    #[test]
+    fn str_reads_value_or_defaults_to_empty() {
+        let mut s = setting(SettingKind::Str);
+        s.apply_env_value(None);
+        assert_eq!(s.str_val, "");
+        s.apply_env_value(Some("/tmp/cache".to_string()));
+        assert_eq!(s.str_val, "/tmp/cache");
+    }
+
+    #[test]
+    fn num_parses_trimmed_value_and_rejects_garbage() {
+        let mut s = setting(SettingKind::Num);
+        s.apply_env_value(Some("  30 ".to_string()));
+        assert_eq!(s.num_val, Some(30));
+        s.apply_env_value(Some("abc".to_string()));
+        assert_eq!(s.num_val, None);
+        s.apply_env_value(None);
+        assert_eq!(s.num_val, None);
+    }
+
+    #[test]
+    fn apply_env_value_clears_modified_flag() {
+        let mut s = setting(SettingKind::Str);
+        assert!(s.modified);
+        s.apply_env_value(None);
+        assert!(!s.modified);
     }
 }

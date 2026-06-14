@@ -26,7 +26,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [x] **Backup** du profil avant écriture (`<profil>.bak`) pour rollback
 - [x] **Confirmation** avant `apply` (popup « Apply changes? » avec `y/n`)
 - [x] **Diff preview** : le bloc qui sera écrit est affiché et colorisé dans la popup de confirmation
-- [ ] **Tests** de la conversion `read_from_env` (nécessite injection de l'environnement) — l'inversion booléenne est déjà couverte indirectement via `generate_block`
+- [x] **Tests** de la conversion `read_from_env` : logique extraite dans `apply_env_value(Option<String>)` (pure) et couverte par 5 tests (inversion, défauts, parsing num)
 - [ ] Gestion de la **valeur par défaut visible** (afficher la valeur Homebrew par défaut dans le détail)
 
 ## 📦 Moyen terme
