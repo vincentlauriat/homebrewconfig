@@ -23,6 +23,16 @@ pub struct Setting {
     pub num_val: Option<u32>,
     pub category: &'static str,
     pub modified: bool,
+    /// Human-readable Homebrew default, shown in the detail pane. Empty when
+    /// there is no meaningful documented default.
+    pub default_hint: &'static str,
+}
+
+impl Setting {
+    fn with_default(mut self, hint: &'static str) -> Self {
+        self.default_hint = hint;
+        self
+    }
 }
 
 impl Setting {
@@ -321,6 +331,7 @@ impl App {
             num_val: None,
             category,
             modified: false,
+            default_hint: "",
         };
         vec![
             make(
@@ -364,7 +375,8 @@ impl App {
                 "Max age in days for cached files during cleanup (default: 120)",
                 SettingKind::Num,
                 "Updates",
-            ),
+            )
+            .with_default("120"),
             make(
                 "Color",
                 "HOMEBREW_NO_COLOR",
@@ -399,7 +411,8 @@ impl App {
                 "Character displayed during install (default: 🍺)",
                 SettingKind::Str,
                 "Display",
-            ),
+            )
+            .with_default("🍺"),
             make(
                 "Cache",
                 "HOMEBREW_CACHE",
@@ -434,14 +447,16 @@ impl App {
                 "Editor used by brew edit (defaults to $EDITOR)",
                 SettingKind::Str,
                 "Tools",
-            ),
+            )
+            .with_default("$EDITOR / $VISUAL"),
             make(
                 "Curl Retries",
                 "HOMEBREW_CURL_RETRIES",
                 "Number of times to retry failed downloads (default: 3)",
                 SettingKind::Num,
                 "Tools",
-            ),
+            )
+            .with_default("3"),
             make(
                 "Insecure Redirect",
                 "HOMEBREW_NO_INSECURE_REDIRECT",
@@ -561,6 +576,7 @@ mod tests {
             num_val: None,
             category: "Test",
             modified: true,
+            default_hint: "",
         }
     }
 

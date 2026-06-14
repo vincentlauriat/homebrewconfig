@@ -162,6 +162,7 @@ mod tests {
             num_val: None,
             category,
             modified: false,
+            default_hint: "",
         }
     }
 

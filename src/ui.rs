@@ -61,10 +61,21 @@ fn render_header(f: &mut Frame, app: &App, area: Rect) {
         ),
         Span::styled(" v0.1.0", Style::default().fg(BREW_AMBER)),
     ]);
-    let subtitle = Line::from(vec![
+    let mut subtitle_spans = vec![
         Span::styled("Profile: ", Style::default().fg(OFF_COLOR)),
         Span::styled(profile, Style::default().fg(MODIFIED_COLOR)),
-    ]);
+    ];
+    let unsaved = app.settings.iter().filter(|s| s.modified).count();
+    if unsaved > 0 {
+        subtitle_spans.push(Span::styled("   ", Style::default()));
+        subtitle_spans.push(Span::styled(
+            format!("● {} unsaved", unsaved),
+            Style::default()
+                .fg(MODIFIED_COLOR)
+                .add_modifier(Modifier::BOLD),
+        ));
+    }
+    let subtitle = Line::from(subtitle_spans);
 
     let block = Block::default()
         .borders(Borders::ALL)
@@ -244,6 +255,13 @@ fn render_detail(f: &mut Frame, app: &App, area: Rect) {
                 Span::styled(setting.value_display(), Style::default().fg(BREW_AMBER)),
             ]));
         }
+    }
+
+    if !setting.default_hint.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("Homebrew default: ", Style::default().fg(OFF_COLOR)),
+            Span::styled(setting.default_hint, Style::default().fg(Color::Gray)),
+        ]));
     }
 
     if setting.modified {
