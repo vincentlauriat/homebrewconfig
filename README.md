@@ -129,6 +129,14 @@ Running the tool again replaces only this block, leaving everything else in your
 | bash | `~/.bash_profile` |
 | fish | `~/.config/fish/config.fish` |
 
+## Documentation
+
+| Document | Contenu |
+|----------|---------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture interne, modules, flux de données, décisions de conception |
+| [PLAN.md](PLAN.md) | Feuille de route par jalons (v0.2.0 → v1.0.0) |
+| [TODOS.md](TODOS.md) | Suivi détaillé des tâches faites et à venir |
+
 ## License
 
 MIT
