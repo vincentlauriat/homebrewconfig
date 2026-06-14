@@ -1,6 +1,7 @@
 # homebrewconfig
 
 [![CI](https://github.com/vincentlauriat/homebrewconfig/actions/workflows/ci.yml/badge.svg)](https://github.com/vincentlauriat/homebrewconfig/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/homebrewconfig.svg)](https://crates.io/crates/homebrewconfig)
 
 A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment variables — no manual shell profile editing required.
 
@@ -41,6 +42,12 @@ A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment va
 - Reads current environment on launch so existing settings are reflected immediately
 
 ## Installation
+
+### From crates.io
+
+```bash
+cargo install homebrewconfig
+```
 
 ### From source
 

@@ -2,55 +2,54 @@
 
 Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 
-## ✅ Fait (v0.1.0)
+## ✅ Livré en v0.1.0
 
-- [x] Boucle TUI avec ratatui + crossterm (raw mode, écran alternatif, teardown sûr)
+- [x] Boucle TUI ratatui + crossterm (raw mode, écran alternatif, teardown sûr)
 - [x] Catalogue des 22 réglages Homebrew (`build_settings`)
 - [x] Trois types de réglages : booléen (avec inversion), chaîne, nombre
 - [x] Lecture de l'environnement courant au démarrage et au `reset`
 - [x] Navigation clavier (`↑/↓`, `j/k`), regroupement par catégorie
-- [x] Toggle des booléens (`Space`)
-- [x] Édition inline des chaînes/nombres avec popup et curseur UTF-8
-- [x] Validation de saisie (nombres : chiffres uniquement)
-- [x] Écriture idempotente du bloc dans le profil shell (`apply_config`)
+- [x] Toggle (`Space`) + édition inline (popup, curseur UTF-8, validation des nombres)
+- [x] Écriture idempotente du bloc dans le profil shell
 - [x] Détection du shell (zsh / bash / fish)
-- [x] Échappement des valeurs chaînes (`\` et `"`)
-- [x] Panneau de détail + barre de statut + popup d'aide
-- [x] Messages de statut avec expiration (3 s)
-- [x] Dirty flags + avertissement « changements non sauvegardés » à la sortie
-- [x] README.md
+- [x] Échappement des valeurs chaînes, panneau de détail, aide, messages
 
-## 🔜 Court terme
+## ✅ Livré en v0.2.0 (publiée sur crates.io)
 
-- [x] **Tests unitaires** pour `config.rs` (`replace_block`, `generate_block`, `escape_value`) — 12 tests, logique pure couverte ; `generate_block` découplé pour prendre `&[Setting]`
-- [x] **Backup** du profil avant écriture (`<profil>.bak`) pour rollback
-- [x] **Confirmation** avant `apply` (popup « Apply changes? » avec `y/n`)
-- [x] **Diff preview** : le bloc qui sera écrit est affiché et colorisé dans la popup de confirmation
-- [x] **Tests** de la conversion `read_from_env` : logique extraite dans `apply_env_value(Option<String>)` (pure) et couverte par 5 tests (inversion, défauts, parsing num)
-- [x] Gestion de la **valeur par défaut visible** : affichée dans le détail pour les réglages à défaut notable (Cleanup Age, Curl Retries, Install Badge, Editor)
-- [x] **Indicateur global** « ● N unsaved » dans le header tant que des changements ne sont pas appliqués
+### Jalon 1 — robustesse
+- [x] Tests unitaires de la logique pure (`config.rs`, `apply_env_value`)
+- [x] Backup `<profil>.bak` avant écriture + no-op si rien ne change
+- [x] Confirmation + **aperçu colorisé** avant `apply`
+- [x] CI GitHub Actions (`fmt --check`, `clippy -D warnings`, `build`, `test`)
 
-## 📦 Moyen terme
+### Jalon 2 — ergonomie
+- [x] Recherche / filtre incrémental (`/`)
+- [x] Valeur par défaut Homebrew dans le détail
+- [x] Indicateur « ● N unsaved » dans le header
+- [x] Cible de profil configurable (auto-détection, `--profile`, cycle `p`) — résout `.zprofile` vs `.zshrc`
 
-- [x] **CI GitHub Actions** : `cargo fmt --check`, `cargo clippy -D warnings`, `cargo build`, `cargo test` (`.github/workflows/ci.yml`)
-- [x] **Recherche / filtre** des réglages (`/` ; matche name/env_var/category/description, navigation et rendu filtrés, 5 tests)
-- [ ] **Détection du profil multi-source** : aussi lire `.zshrc` / `.bashrc` si l'export y est déjà
-- [x] **Cible de profil configurable** : auto-détection (fichier contenant déjà le bloc → existant → préféré), flag `--profile <PATH>`, et touche `p` pour cycler dans l'UI
-- [x] **Mode CLI non interactif** : `--set VAR=VALUE`, `--unset VAR`, `--apply`, `--dry-run`, `--list` (scriptable, 7 tests) — début du Jalon 3
-- [x] **Export/import** de presets TOML (`--export-preset` / `--import-preset`, baseline + override par `--set`, vars inconnues ignorées avec warning, 4 tests)
-- [x] **Sortie `--json`** de l'état courant (typée par kind, pour `jq`/intégration machine, 3 tests) — clôt le Jalon 3
+### Jalon 3 — scriptabilité
+- [x] CLI non interactive : `--set`, `--unset`, `--apply`, `--dry-run`, `--list`
+- [x] Presets TOML : `--export-preset` / `--import-preset`
+- [x] Sortie `--json` typée de l'état courant
+
+### Jalon 4 — distribution
+- [x] `--brew-env` : lecture de l'environnement effectif via `brew`
+- [x] Validation d'existence des chemins (Cache/Cellar/Logs/Temp)
+- [x] Page man + complétions bash/zsh/fish
+- [x] Métadonnées `Cargo.toml`, `CHANGELOG.md`, badge CI
+- [x] **Publication crates.io** + tag `v0.2.0` + GitHub Release
+- [x] **Formule Homebrew** préparée (`HomebrewFormula/homebrewconfig.rb`)
+
+## 🔜 À venir
+
+- [ ] Pousser le tap Homebrew sur un repo `homebrew-tap` (`brew install vincentlauriat/tap/homebrewconfig`)
+- [ ] Détection multi-source : lire les exports `HOMEBREW_*` déjà présents hors de notre bloc
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
-
-## 🎯 Long terme / idées
-
-- [x] Lire l'environnement effectif via `brew environment` (`--brew-env`, parsing pur testé, dégradation gracieuse si brew absent, 4 tests)
-- [x] **Validation sémantique** des chemins (Cache/Cellar/Logs/Temp) : statut « ✓ path exists / ⚠ path not found » dans le détail (`path_status` testable, 3 tests)
 - [ ] **Thèmes** de couleurs configurables
-- [ ] Publication sur **crates.io** et formule **Homebrew** (`brew install homebrewconfig`)
-- [x] Page de **man** (`man/homebrewconfig.1`, lint mandoc propre) + **complétions shell** bash/zsh/fish (`completions/`)
 
 ## 🐛 Dette technique / à surveiller
 
 - [ ] `cursor_pos` dans la popup d'édition ne gère pas le scroll horizontal si la valeur dépasse la largeur du champ
 - [ ] Pas de gestion d'erreur si `$SHELL` est inhabituel (fallback silencieux sur bash)
-- [x] ~~`detect_shell_profile` suppose `~/.zprofile`~~ → résolu : `.zshrc` préféré, détection du fichier contenant déjà le bloc, override `--profile` + cycle `p`
+- [x] ~~`detect_shell_profile` suppose `~/.zprofile`~~ → résolu (auto-détection + `--profile` + cycle `p`)
