@@ -312,6 +312,20 @@ impl App {
         self.settings.iter().any(|s| s.modified)
     }
 
+    /// Set a setting (identified by its environment variable) from a raw value,
+    /// using the same conversion as reading the environment. `None` resets it to
+    /// the Homebrew default. Used by the non-interactive CLI.
+    pub fn set_var(&mut self, env_var: &str, raw: Option<String>) -> Result<(), String> {
+        match self.settings.iter_mut().find(|s| s.env_var == env_var) {
+            Some(setting) => {
+                setting.apply_env_value(raw);
+                setting.modified = true;
+                Ok(())
+            }
+            None => Err(format!("unknown variable '{}'", env_var)),
+        }
+    }
+
     pub fn reset(&mut self) {
         for setting in &mut self.settings {
             setting.read_from_env();
@@ -719,5 +733,45 @@ mod tests {
         assert_eq!(app.shell_profile, PathBuf::from("/h/.zprofile"));
         app.cycle_profile();
         assert_eq!(app.shell_profile, PathBuf::from("/h/.zshrc"));
+    }
+
+    // ---- set_var (CLI batch) ----
+
+    fn find<'a>(app: &'a App, var: &str) -> &'a Setting {
+        app.settings.iter().find(|s| s.env_var == var).unwrap()
+    }
+
+    #[test]
+    fn set_var_updates_matching_setting() {
+        let mut app = App::new();
+        app.set_var("HOMEBREW_CLEANUP_MAX_AGE_DAYS", Some("30".to_string()))
+            .unwrap();
+        let s = find(&app, "HOMEBREW_CLEANUP_MAX_AGE_DAYS");
+        assert_eq!(s.num_val, Some(30));
+        assert!(s.modified);
+    }
+
+    #[test]
+    fn set_var_rejects_unknown_variable() {
+        let mut app = App::new();
+        assert!(app.set_var("HOMEBREW_NOPE", Some("1".to_string())).is_err());
+    }
+
+    #[test]
+    fn set_var_none_resets_to_default() {
+        let mut app = App::new();
+        app.set_var("HOMEBREW_INSTALL_BADGE", Some("X".to_string()))
+            .unwrap();
+        app.set_var("HOMEBREW_INSTALL_BADGE", None).unwrap();
+        assert_eq!(find(&app, "HOMEBREW_INSTALL_BADGE").str_val, "");
+    }
+
+    #[test]
+    fn set_var_inverted_bool_present_disables_feature() {
+        let mut app = App::new();
+        // Setting HOMEBREW_NO_ANALYTICS means analytics OFF -> bool_val false.
+        app.set_var("HOMEBREW_NO_ANALYTICS", Some("1".to_string()))
+            .unwrap();
+        assert!(!find(&app, "HOMEBREW_NO_ANALYTICS").bool_val);
     }
 }

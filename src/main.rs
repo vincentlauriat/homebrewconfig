@@ -22,10 +22,19 @@ use app::{App, Mode, SettingKind};
 const MESSAGE_TIMEOUT: Duration = Duration::from_secs(3);
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let profile_override = match parse_args() {
-        ArgAction::Run(p) => p,
-        ArgAction::Exit => return Ok(()),
+    let cli = match parse_args() {
+        ArgAction::Run(cli) => cli,
+        ArgAction::Exit(code) => std::process::exit(code),
     };
+
+    // Non-interactive (scriptable) mode: apply/inspect without launching the UI.
+    if cli.is_batch() {
+        if let Err(e) = run_batch(&cli) {
+            eprintln!("error: {}", e);
+            std::process::exit(1);
+        }
+        return Ok(());
+    }
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -33,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let mut app = App::with_profile(profile_override);
+    let mut app = App::with_profile(cli.profile);
     let result = run(&mut terminal, &mut app);
 
     disable_raw_mode()?;
@@ -53,41 +62,119 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[derive(Default)]
+struct Cli {
+    profile: Option<PathBuf>,
+    sets: Vec<(String, String)>,
+    unsets: Vec<String>,
+    apply: bool,
+    dry_run: bool,
+    list: bool,
+}
+
+impl Cli {
+    /// True when any non-interactive flag is present, so we skip the TUI.
+    fn is_batch(&self) -> bool {
+        !self.sets.is_empty() || !self.unsets.is_empty() || self.apply || self.dry_run || self.list
+    }
+}
+
 enum ArgAction {
-    Run(Option<PathBuf>),
-    Exit,
+    Run(Cli),
+    Exit(i32),
+}
+
+fn parse_kv(s: &str) -> Option<(String, String)> {
+    s.split_once('=')
+        .filter(|(k, _)| !k.is_empty())
+        .map(|(k, v)| (k.to_string(), v.to_string()))
 }
 
 fn parse_args() -> ArgAction {
+    let mut cli = Cli::default();
     let mut args = std::env::args().skip(1);
-    let Some(arg) = args.next() else {
-        return ArgAction::Run(None);
-    };
-    match arg.as_str() {
-        "-h" | "--help" => {
-            print_help();
-            ArgAction::Exit
-        }
-        "-V" | "--version" => {
-            println!("homebrewconfig {}", env!("CARGO_PKG_VERSION"));
-            ArgAction::Exit
-        }
-        "-p" | "--profile" => match args.next() {
-            Some(path) => ArgAction::Run(Some(PathBuf::from(path))),
-            None => {
-                eprintln!("error: --profile requires a path argument");
-                ArgAction::Exit
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "-h" | "--help" => {
+                print_help();
+                return ArgAction::Exit(0);
             }
-        },
-        other => {
-            if let Some(rest) = other.strip_prefix("--profile=") {
-                ArgAction::Run(Some(PathBuf::from(rest)))
-            } else {
-                eprintln!("error: unknown argument '{}'. Try --help.", other);
-                ArgAction::Exit
+            "-V" | "--version" => {
+                println!("homebrewconfig {}", env!("CARGO_PKG_VERSION"));
+                return ArgAction::Exit(0);
+            }
+            "-p" | "--profile" => match args.next() {
+                Some(path) => cli.profile = Some(PathBuf::from(path)),
+                None => return arg_error("--profile requires a path argument"),
+            },
+            "--set" => match args.next() {
+                Some(kv) => match parse_kv(&kv) {
+                    Some(pair) => cli.sets.push(pair),
+                    None => return arg_error(&format!("--set expects VAR=VALUE, got '{}'", kv)),
+                },
+                None => return arg_error("--set requires VAR=VALUE"),
+            },
+            "--unset" => match args.next() {
+                Some(var) => cli.unsets.push(var),
+                None => return arg_error("--unset requires a variable name"),
+            },
+            "--apply" => cli.apply = true,
+            "--dry-run" => cli.dry_run = true,
+            "--list" => cli.list = true,
+            other => {
+                if let Some(rest) = other.strip_prefix("--profile=") {
+                    cli.profile = Some(PathBuf::from(rest));
+                } else if let Some(rest) = other.strip_prefix("--set=") {
+                    match parse_kv(rest) {
+                        Some(pair) => cli.sets.push(pair),
+                        None => {
+                            return arg_error(&format!("--set expects VAR=VALUE, got '{}'", rest))
+                        }
+                    }
+                } else if let Some(rest) = other.strip_prefix("--unset=") {
+                    cli.unsets.push(rest.to_string());
+                } else {
+                    return arg_error(&format!("unknown argument '{}'. Try --help.", other));
+                }
             }
         }
     }
+    ArgAction::Run(cli)
+}
+
+fn arg_error(msg: &str) -> ArgAction {
+    eprintln!("error: {}", msg);
+    ArgAction::Exit(2)
+}
+
+/// Run the requested non-interactive actions against a freshly-built app.
+fn run_batch(cli: &Cli) -> Result<(), String> {
+    let mut app = App::with_profile(cli.profile.clone());
+
+    for (var, value) in &cli.sets {
+        app.set_var(var, Some(value.clone()))?;
+    }
+    for var in &cli.unsets {
+        app.set_var(var, None)?;
+    }
+
+    if cli.list {
+        for s in &app.settings {
+            println!("{:<28} {:<34} {}", s.name, s.env_var, s.value_display());
+        }
+    }
+
+    if cli.dry_run {
+        println!("{}", config::preview_block(&app));
+        return Ok(());
+    }
+
+    if cli.apply {
+        config::apply_config(&app)?;
+        println!("Applied to {}", app.shell_profile.display());
+    }
+
+    Ok(())
 }
 
 fn print_help() {
@@ -98,9 +185,18 @@ fn print_help() {
          homebrewconfig [OPTIONS]\n\n\
          OPTIONS:\n    \
          -p, --profile <PATH>   Write to this shell profile instead of the auto-detected one\n    \
+             --set VAR=VALUE    Set a Homebrew variable (repeatable; non-interactive)\n    \
+             --unset VAR        Reset a variable to its Homebrew default (repeatable)\n    \
+             --apply            Write the profile without opening the UI\n    \
+             --dry-run          Print the export block that would be written, then exit\n    \
+             --list             Print all settings and their current values, then exit\n    \
          -h, --help             Print this help\n    \
          -V, --version          Print version\n\n\
-         Inside the TUI, press 'p' to cycle the write target and '?' for all keys.",
+         With no batch flag, the interactive TUI launches. Inside it, press 'p'\n\
+         to cycle the write target and '?' for all keys.\n\n\
+         EXAMPLES:\n    \
+         homebrewconfig --set HOMEBREW_NO_ANALYTICS=1 --apply\n    \
+         homebrewconfig --unset HOMEBREW_CLEANUP_MAX_AGE_DAYS --dry-run",
         env!("CARGO_PKG_VERSION")
     );
 }
@@ -258,4 +354,40 @@ fn char_to_byte(s: &str, char_idx: usize) -> usize {
         .nth(char_idx)
         .map(|(i, _)| i)
         .unwrap_or(s.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_kv_splits_on_first_equals() {
+        assert_eq!(
+            parse_kv("VAR=val"),
+            Some(("VAR".to_string(), "val".to_string()))
+        );
+        // Value may itself contain '='.
+        assert_eq!(
+            parse_kv("VAR=a=b"),
+            Some(("VAR".to_string(), "a=b".to_string()))
+        );
+        // Empty value is allowed (e.g. clearing a string).
+        assert_eq!(parse_kv("VAR="), Some(("VAR".to_string(), String::new())));
+    }
+
+    #[test]
+    fn parse_kv_rejects_missing_key_or_equals() {
+        assert_eq!(parse_kv("noequals"), None);
+        assert_eq!(parse_kv("=val"), None);
+    }
+
+    #[test]
+    fn is_batch_only_when_a_batch_flag_is_set() {
+        let mut cli = Cli::default();
+        assert!(!cli.is_batch());
+        cli.profile = Some(PathBuf::from("/x"));
+        assert!(!cli.is_batch()); // profile alone still launches the TUI
+        cli.apply = true;
+        assert!(cli.is_batch());
+    }
 }
