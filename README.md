@@ -76,6 +76,7 @@ Press `p` at any time to cycle the write target between the candidate profiles f
 | `--apply` | Write the profile without opening the UI |
 | `--dry-run` | Print the export block that would be written, then exit |
 | `--list` | Print all settings and their current values, then exit |
+| `--json` | Print the full state as JSON (for `jq` etc.), then exit |
 | `-h`, `--help` | Print help |
 | `-V`, `--version` | Print version |
 
@@ -94,6 +95,9 @@ homebrewconfig --set HOMEBREW_NO_ANALYTICS=1 \
 
 # Reset a variable to its default and inspect the result
 homebrewconfig --unset HOMEBREW_CLEANUP_MAX_AGE_DAYS --list
+
+# Machine-readable state, e.g. which settings differ from their default
+homebrewconfig --json | jq '.[] | select(.modified)'
 ```
 
 #### Presets
