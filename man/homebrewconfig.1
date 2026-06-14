@@ -1,0 +1,114 @@
+.TH HOMEBREWCONFIG 1 "2026-06-14" "homebrewconfig 0.1.0" "User Commands"
+.SH NAME
+homebrewconfig \- configure Homebrew environment variables
+.SH SYNOPSIS
+.B homebrewconfig
+.RI [ OPTIONS ]
+.SH DESCRIPTION
+.B homebrewconfig
+edits the Homebrew environment variables in your shell profile, either through
+an interactive terminal UI or, when a batch flag is given, non-interactively for
+scripting.
+.PP
+With no batch flag, the interactive TUI launches. The tool writes a delimited,
+idempotent block to your shell profile (auto-detected from
+.BR $SHELL ),
+backs up the previous version to
+.IR <profile>.bak ,
+and leaves the rest of the file untouched.
+.SH OPTIONS
+.TP
+.BI \-p ", " \-\-profile " PATH"
+Write to this shell profile instead of the auto-detected one.
+.TP
+.BI \-\-set " VAR=VALUE"
+Set a Homebrew variable (repeatable; runs non-interactively).
+.TP
+.BI \-\-unset " VAR"
+Reset a variable to its Homebrew default (repeatable).
+.TP
+.BI \-\-import\-preset " PATH"
+Load settings from a TOML preset, used as a baseline.
+.TP
+.BI \-\-export\-preset " PATH"
+Write the current non-default settings to a TOML preset.
+.TP
+.B \-\-apply
+Write the profile without opening the UI.
+.TP
+.B \-\-dry\-run
+Print the export block that would be written, then exit.
+.TP
+.B \-\-list
+Print all settings and their current values, then exit.
+.TP
+.B \-\-json
+Print the full state as JSON, then exit.
+.TP
+.BR \-h ", " \-\-help
+Print help and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version and exit.
+.SH KEYBINDINGS
+Inside the TUI:
+.TP
+.BR \[ua] / \[da] ", " k / j
+Move the selection.
+.TP
+.B /
+Filter settings by name, variable, category or description.
+.TP
+.B Space
+Toggle a boolean setting.
+.TP
+.B Enter
+Edit a string or number setting.
+.TP
+.B a
+Apply all changes (shows a confirmation and preview first).
+.TP
+.B r
+Reset to current environment values.
+.TP
+.B p
+Cycle the target shell profile.
+.TP
+.B ?
+Toggle help.
+.TP
+.B q
+Quit.
+.SH EXAMPLES
+Preview the block that would be written:
+.PP
+.RS
+.EX
+homebrewconfig \-\-set HOMEBREW_NO_ANALYTICS=1 \-\-dry\-run
+.EE
+.RE
+.PP
+Apply changes straight to the profile:
+.PP
+.RS
+.EX
+homebrewconfig \-\-set HOMEBREW_NO_ANALYTICS=1 \-\-apply
+.EE
+.RE
+.PP
+Share a configuration between machines:
+.PP
+.RS
+.EX
+homebrewconfig \-\-export\-preset team.toml
+homebrewconfig \-\-import\-preset team.toml \-\-apply
+.EE
+.RE
+.SH FILES
+.TP
+.I ~/.zprofile ", " ~/.zshrc ", " ~/.bash_profile ", " ~/.bashrc ", " ~/.config/fish/config.fish
+Candidate shell profiles, depending on the detected shell.
+.SH SEE ALSO
+.BR brew (1)
+.SH AUTHOR
+Written by Vincent Lauriat.

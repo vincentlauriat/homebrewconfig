@@ -47,7 +47,7 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 - [x] **Validation sémantique** des chemins (Cache/Cellar/Logs/Temp) : statut « ✓ path exists / ⚠ path not found » dans le détail (`path_status` testable, 3 tests)
 - [ ] **Thèmes** de couleurs configurables
 - [ ] Publication sur **crates.io** et formule **Homebrew** (`brew install homebrewconfig`)
-- [ ] Page de **man** / complétion shell
+- [x] Page de **man** (`man/homebrewconfig.1`, lint mandoc propre) + **complétions shell** bash/zsh/fish (`completions/`)
 
 ## 🐛 Dette technique / à surveiller
 

@@ -1,0 +1,12 @@
+# fish completion for homebrewconfig
+complete -c homebrewconfig -s p -l profile -r -d 'Write to this shell profile'
+complete -c homebrewconfig -l set -x -d 'Set a Homebrew variable (VAR=VALUE)'
+complete -c homebrewconfig -l unset -x -d 'Reset a variable to its default'
+complete -c homebrewconfig -l import-preset -r -d 'Load settings from a TOML preset'
+complete -c homebrewconfig -l export-preset -r -d 'Write current settings to a TOML preset'
+complete -c homebrewconfig -l apply -d 'Write the profile without opening the UI'
+complete -c homebrewconfig -l dry-run -d 'Print the export block, then exit'
+complete -c homebrewconfig -l list -d 'Print all settings and values, then exit'
+complete -c homebrewconfig -l json -d 'Print the full state as JSON, then exit'
+complete -c homebrewconfig -s h -l help -d 'Print help'
+complete -c homebrewconfig -s V -l version -d 'Print version'

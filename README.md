@@ -53,6 +53,21 @@ cargo install --path .
 - Rust 1.70+ ([rustup.rs](https://rustup.rs))
 - A terminal with 256-color support
 
+### Man page & shell completions
+
+A man page and shell completions ship in [`man/`](man/) and
+[`completions/`](completions/):
+
+```bash
+# Man page
+install -Dm644 man/homebrewconfig.1 ~/.local/share/man/man1/homebrewconfig.1
+
+# Completions (pick your shell)
+install -Dm644 completions/homebrewconfig.bash ~/.local/share/bash-completion/completions/homebrewconfig
+install -Dm644 completions/_homebrewconfig "${fpath[1]:-$HOME/.zfunc}/_homebrewconfig"   # zsh
+install -Dm644 completions/homebrewconfig.fish ~/.config/fish/completions/homebrewconfig.fish
+```
+
 ## Usage
 
 ```bash
