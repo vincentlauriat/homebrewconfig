@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-15
+
 ### Added
 - Colour themes: cycle with `t` in the TUI, or use `--theme <name>` /
   `--list-themes`. The choice is persisted to the user config directory and
@@ -40,6 +42,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Initial release: interactive TUI to browse and edit Homebrew environment
   variables and write an idempotent export block to the shell profile.
 
-[Unreleased]: https://github.com/vincentlauriat/homebrewconfig/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/vincentlauriat/homebrewconfig/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/vincentlauriat/homebrewconfig/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/vincentlauriat/homebrewconfig/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/vincentlauriat/homebrewconfig/releases/tag/v0.1.0
