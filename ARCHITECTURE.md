@@ -1,5 +1,8 @@
 # Architecture
 
+> Miroir français de [`ARCHITECTURE_EN.md`](ARCHITECTURE_EN.md) (source de
+> vérité). Les deux fichiers sont édités dans le même changement.
+
 Ce document décrit l'architecture interne de **homebrewconfig**, écrit en Rust.
 L'outil a deux visages partageant le même cœur :
 
