@@ -7,7 +7,7 @@ A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment va
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║              🍺 homebrewconfig v0.2.0                        ║
+║              🍺 homebrewconfig v0.3.0                        ║
 ║              Profile: ~/.zprofile                            ║
 ╚══════════════════════════════════════════════════════════════╝
 ┌─────────────────────────────────┐┌────────────────────────────┐
@@ -263,9 +263,6 @@ candidates live with `p` inside the TUI.
 | [PLAN.md](PLAN.md) | Feuille de route par jalons |
 | [TODOS.md](TODOS.md) | Suivi détaillé des tâches faites et à venir |
 | [CHANGELOG.md](CHANGELOG.md) | Journal des changements publiés (Keep a Changelog) |
-| [CHANGES.md](CHANGES.md) | Journal de travail daté (toutes modifications) |
-| [MEMORY.md](MEMORY.md) | État de référence du projet entre sessions |
-| [COMMANDS.md](COMMANDS.md) | Journal des messages |
 
 ## License
 
