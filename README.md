@@ -37,6 +37,7 @@ A terminal UI and CLI for configuring [Homebrew](https://brew.sh) environment va
 - Filter settings instantly with `/` (matches name, variable, category and description)
 - Toggle boolean settings with `Space`, edit strings and numbers inline
 - See each setting's Homebrew default and an unsaved-changes counter at a glance
+- Switch between several colour themes with `t` (choice is remembered)
 - Detects your shell automatically (zsh, bash, fish)
 - Writes a clean, idempotent block to your shell profile — re-running never duplicates exports
 - Reads current environment on launch so existing settings are reflected immediately
@@ -108,6 +109,8 @@ Press `p` at any time to cycle the write target between the candidate profiles f
 | `--list` | Print all settings and their current values, then exit |
 | `--json` | Print the full state as JSON (for `jq` etc.), then exit |
 | `--brew-env` | Print Homebrew's effective `HOMEBREW_*` env (via `brew`), then exit |
+| `--theme <NAME>` | Set and persist the UI colour theme |
+| `--list-themes` | Print available theme names, then exit |
 | `-h`, `--help` | Print help |
 | `-V`, `--version` | Print version |
 
@@ -164,10 +167,25 @@ removes it (feature on), mirroring how Homebrew reads them.
 | `a` | Apply all changes (shows a confirmation + preview first) |
 | `r` | Reset to current environment values |
 | `p` | Cycle the target shell profile |
+| `t` | Cycle the colour theme (remembered across runs) |
 | `?` | Toggle help |
 | `Esc` | Close help / quit |
 | `q` | Quit |
 | `Ctrl+C` | Quit |
+
+## Themes
+
+Press `t` in the TUI to cycle through the built-in colour themes, or set one
+explicitly:
+
+```bash
+homebrewconfig --list-themes          # brew, midnight, forest, rose, mono
+homebrewconfig --theme midnight       # set and remember it
+```
+
+The choice is persisted to `config.toml` in your platform config directory
+(`~/Library/Application Support/homebrewconfig/` on macOS,
+`~/.config/homebrewconfig/` on Linux) and restored on the next launch.
 
 ## Settings
 
