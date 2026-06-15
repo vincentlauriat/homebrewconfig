@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - The status bar now lists the `p` (cycle profile) and `t` (cycle theme) keys.
+- The TUI now exits with a clear message when there is no terminal (TTY) instead
+  of a raw OS error.
 
 ## [0.3.0] - 2026-06-15
 

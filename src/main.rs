@@ -9,6 +9,7 @@ mod ui;
 
 use std::fs;
 use std::io;
+use std::io::IsTerminal;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -57,6 +58,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         }
         return Ok(());
+    }
+
+    // The interactive UI needs a real terminal. Fail clearly instead of with a
+    // raw OS error when stdin/stdout is not a TTY (e.g. piped, or run inside a
+    // non-interactive shell).
+    if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
+        eprintln!("homebrewconfig: the interactive UI needs a terminal (TTY).");
+        eprintln!("Run it directly in your terminal window, or use a non-interactive");
+        eprintln!("flag such as --list, --json or --set (see --help).");
+        std::process::exit(1);
     }
 
     enable_raw_mode()?;
