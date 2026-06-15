@@ -258,10 +258,14 @@ candidates live with `p` inside the TUI.
 
 | Document | Contenu |
 |----------|---------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture interne, modules, flux de données, décisions de conception |
-| [PLAN.md](PLAN.md) | Feuille de route par jalons (v0.2.0 → v1.0.0) |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Architecture interne, modules, flux de données (miroir FR) |
+| [ARCHITECTURE_EN.md](ARCHITECTURE_EN.md) | English source of truth for the architecture |
+| [PLAN.md](PLAN.md) | Feuille de route par jalons |
 | [TODOS.md](TODOS.md) | Suivi détaillé des tâches faites et à venir |
-| [CHANGELOG.md](CHANGELOG.md) | Journal des changements (Keep a Changelog) |
+| [CHANGELOG.md](CHANGELOG.md) | Journal des changements publiés (Keep a Changelog) |
+| [CHANGES.md](CHANGES.md) | Journal de travail daté (toutes modifications) |
+| [MEMORY.md](MEMORY.md) | État de référence du projet entre sessions |
+| [COMMANDS.md](COMMANDS.md) | Journal des messages |
 
 ## License
 
