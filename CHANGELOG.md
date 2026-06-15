@@ -6,6 +6,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- The status bar now lists the `p` (cycle profile) and `t` (cycle theme) keys.
+
 ## [0.3.0] - 2026-06-15
 
 ### Added
