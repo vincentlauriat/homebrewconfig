@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Colour themes: cycle with `t` in the TUI, or use `--theme <name>` /
+  `--list-themes`. The choice is persisted to the user config directory and
+  restored on the next launch. Ships `brew`, `midnight`, `forest`, `rose` and
+  `mono`.
+
 ## [0.2.0] - 2026-06-14
 
 ### Added

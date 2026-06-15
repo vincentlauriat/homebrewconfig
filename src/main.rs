@@ -1,8 +1,10 @@
 mod app;
+mod appconfig;
 mod brew;
 mod config;
 mod preset;
 mod report;
+mod theme;
 mod ui;
 
 use std::fs;
@@ -30,6 +32,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ArgAction::Run(cli) => cli,
         ArgAction::Exit(code) => std::process::exit(code),
     };
+
+    // --theme validates and persists the choice; App::with_profile then loads it.
+    if let Some(name) = &cli.theme {
+        if theme::index_of(name).is_none() {
+            eprintln!(
+                "error: unknown theme '{}'. Available: {}",
+                name,
+                theme::names()
+            );
+            std::process::exit(2);
+        }
+        if let Err(e) = appconfig::save(&appconfig::AppConfig {
+            theme: Some(name.clone()),
+        }) {
+            eprintln!("warning: could not save theme: {}", e);
+        }
+    }
 
     // Non-interactive (scriptable) mode: apply/inspect without launching the UI.
     if cli.is_batch() {
@@ -73,6 +92,8 @@ struct Cli {
     unsets: Vec<String>,
     import_preset: Option<PathBuf>,
     export_preset: Option<PathBuf>,
+    theme: Option<String>,
+    list_themes: bool,
     apply: bool,
     dry_run: bool,
     list: bool,
@@ -87,6 +108,7 @@ impl Cli {
             || !self.unsets.is_empty()
             || self.import_preset.is_some()
             || self.export_preset.is_some()
+            || self.list_themes
             || self.apply
             || self.dry_run
             || self.list
@@ -147,6 +169,11 @@ fn parse_args() -> ArgAction {
             "--list" => cli.list = true,
             "--json" => cli.json = true,
             "--brew-env" => cli.brew_env = true,
+            "--list-themes" => cli.list_themes = true,
+            "--theme" => match args.next() {
+                Some(name) => cli.theme = Some(name),
+                None => return arg_error("--theme requires a theme name"),
+            },
             other => {
                 if let Some(rest) = other.strip_prefix("--profile=") {
                     cli.profile = Some(PathBuf::from(rest));
@@ -163,6 +190,8 @@ fn parse_args() -> ArgAction {
                     cli.import_preset = Some(PathBuf::from(rest));
                 } else if let Some(rest) = other.strip_prefix("--export-preset=") {
                     cli.export_preset = Some(PathBuf::from(rest));
+                } else if let Some(rest) = other.strip_prefix("--theme=") {
+                    cli.theme = Some(rest.to_string());
                 } else {
                     return arg_error(&format!("unknown argument '{}'. Try --help.", other));
                 }
@@ -179,6 +208,13 @@ fn arg_error(msg: &str) -> ArgAction {
 
 /// Run the requested non-interactive actions against a freshly-built app.
 fn run_batch(cli: &Cli) -> Result<(), String> {
+    if cli.list_themes {
+        for t in theme::THEMES {
+            println!("{}", t.name);
+        }
+        return Ok(());
+    }
+
     if cli.brew_env {
         let output = brew::brew_environment()
             .ok_or("could not run 'brew' (is Homebrew installed and on PATH?)")?;
@@ -259,6 +295,8 @@ fn print_help() {
              --list             Print all settings and their current values, then exit\n    \
              --json             Print the full state as JSON, then exit\n    \
              --brew-env         Print Homebrew's effective HOMEBREW_* env (via brew), then exit\n    \
+             --theme <NAME>     Set and persist the UI colour theme\n    \
+             --list-themes      Print available theme names, then exit\n    \
          -h, --help             Print this help\n    \
          -V, --version          Print version\n\n\
          With no batch flag, the interactive TUI launches. Inside it, press 'p'\n\
@@ -334,6 +372,7 @@ fn handle_normal(app: &mut App, key: KeyEvent) -> bool {
         KeyCode::Char('r') => app.reset(),
         KeyCode::Char('/') => app.start_filter(),
         KeyCode::Char('p') => app.cycle_profile(),
+        KeyCode::Char('t') => app.cycle_theme(),
         KeyCode::Char('a') => app.mode = Mode::Confirming,
         _ => {}
     }

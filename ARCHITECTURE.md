@@ -156,6 +156,22 @@ Seul module qui écrit le profil. Garanties :
 - **`parse_brew_env`** (pur) : extrait les assignations `HOMEBREW_*`.
 - Dégradation gracieuse : `--brew-env` ne modifie rien.
 
+### `theme.rs` — palettes de couleurs
+
+- **`Theme`** (`Copy`) : toutes les couleurs de l'UI (primary, accent, on/off,
+  bg, etc.). Le rendu source **toutes** ses couleurs depuis le thème actif, donc
+  l'apparence est interchangeable à l'exécution.
+- **`THEMES`** : liste statique (`brew`, `midnight`, `forest`, `rose`, `mono`),
+  le premier étant le défaut. `index_of`/`names` pour la résolution par nom.
+
+### `appconfig.rs` — préférences utilisateur (serde + toml)
+
+- Persiste les préférences de l'outil lui-même (distinctes des variables
+  Homebrew gérées) dans `config.toml` sous le répertoire de config utilisateur
+  (`dirs::config_dir()`). Pour l'instant : le thème choisi.
+- `load` tolère l'absence/invalidité (retombe sur les défauts) ; `save` est
+  best-effort (un répertoire en lecture seule ne casse pas l'UI).
+
 ## Flux de données
 
 ### Démarrage (TUI)
@@ -212,3 +228,5 @@ parse_args() → Cli::is_batch() == true → run_batch()
 - **Nouveau shell** : une branche dans `App::profile_candidates`.
 - **Nouvelle commande CLI** : un champ dans `Cli`, une branche dans `parse_args`,
   un traitement dans `run_batch`.
+- **Nouveau thème** : une entrée dans `theme::THEMES`. Cyclage, `--theme` et la
+  persistance le prennent en charge automatiquement.

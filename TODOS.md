@@ -45,8 +45,8 @@ Suivi de l'avancement de **homebrewconfig**. Cases cochées = terminé.
 
 - [x] Tap Homebrew publié : [`vincentlauriat/homebrew-tap`](https://github.com/vincentlauriat/homebrew-tap) → `brew install vincentlauriat/tap/homebrewconfig`
 - [ ] Détection multi-source : lire les exports `HOMEBREW_*` déjà présents hors de notre bloc
+- [x] **Thèmes** de couleurs configurables (5 thèmes, touche `t`, flags `--theme`/`--list-themes`, persistance dans `config.toml`)
 - [ ] Support **Windows** (si pertinent) ou message clair de non-support
-- [ ] **Thèmes** de couleurs configurables
 
 ## 🐛 Dette technique / à surveiller
 

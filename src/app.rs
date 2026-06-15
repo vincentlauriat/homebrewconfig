@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 use ratatui::widgets::ListState;
 
+use crate::appconfig::{self, AppConfig};
 use crate::config;
+use crate::theme::{self, Theme};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SettingKind {
@@ -127,6 +129,7 @@ pub struct App {
     pub profile_candidates: Vec<PathBuf>,
     pub message: Option<(String, bool)>,
     pub show_help: bool,
+    pub theme_index: usize,
 }
 
 impl App {
@@ -148,6 +151,10 @@ impl App {
         let shell_profile = override_path.unwrap_or_else(|| {
             Self::pick_profile(&candidates, config::file_contains_block, |p| p.exists())
         });
+        let theme_index = appconfig::load()
+            .theme
+            .and_then(|name| theme::index_of(&name))
+            .unwrap_or(0);
         let mut app = App {
             settings,
             selected: 0,
@@ -160,9 +167,30 @@ impl App {
             profile_candidates: candidates,
             message: None,
             show_help: false,
+            theme_index,
         };
         app.sync_list_state();
         app
+    }
+
+    /// The active colour palette.
+    pub fn theme(&self) -> &Theme {
+        &theme::THEMES[self.theme_index]
+    }
+
+    /// Switch to the next theme and persist the choice.
+    pub fn cycle_theme(&mut self) {
+        self.theme_index = (self.theme_index + 1) % theme::THEMES.len();
+        self.persist_theme();
+        self.message = Some((format!("Theme: {}", self.theme().name), false));
+    }
+
+    fn persist_theme(&self) {
+        let config = AppConfig {
+            theme: Some(self.theme().name.to_string()),
+        };
+        // Persistence is best-effort: a read-only config dir shouldn't break the UI.
+        let _ = appconfig::save(&config);
     }
 
     /// Cycle the write target through the detected candidate profiles.
