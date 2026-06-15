@@ -1,8 +1,8 @@
 class Homebrewconfig < Formula
   desc "TUI and CLI for configuring Homebrew environment variables"
   homepage "https://github.com/vincentlauriat/homebrewconfig"
-  url "https://github.com/vincentlauriat/homebrewconfig/archive/refs/tags/v0.2.0.tar.gz"
-  sha256 "3d66265cdb32308351d07cdae27a33d70e4fa15a06601b5ed7bf25b10b6a142d"
+  url "https://github.com/vincentlauriat/homebrewconfig/archive/refs/tags/v0.3.0.tar.gz"
+  sha256 "9df4cccf8dff15022d94d65af8cb1ba1873b0a97914ed137cbe847b0244c6313"
   license "MIT"
   head "https://github.com/vincentlauriat/homebrewconfig.git", branch: "main"
 
