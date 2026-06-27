@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>homebrewconfig — Configure Homebrew without editing your shell profile</title>
+<meta name="description" content="A terminal UI and CLI for configuring Homebrew environment variables — browse, filter and toggle every HOMEBREW_* setting, then write a clean, idempotent block to your shell profile. Rust, scriptable, free & open-source (MIT).">
+<meta property="og:title" content="homebrewconfig">
+<meta property="og:description" content="A Rust TUI + CLI to manage every HOMEBREW_* environment variable and write a clean, idempotent block to your shell profile.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2318181b'/%3E%3Ctext x='14' y='62' font-size='34' font-family='monospace' font-weight='800' fill='%23f59e0b'%3E%26gt;_%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0c0a09; --bg2:#14110f; --panel:#1a1613; --line:#2c241d;
+    --txt:#f2ece4; --muted:#b3a394; --faint:#80715f;
+    --accent:#f59e0b; --accent2:#fbbf24; --accent-soft:rgba(245,158,11,.14);
+    --green:#86efac; --cyan:#67e8f9; --dim:#6b7280;
+    --maxw:1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--txt);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,"Cascadia Code",monospace}
+
+  nav{position:sticky;top:0;z-index:20;backdrop-filter:saturate(160%) blur(12px);background:rgba(12,10,9,.74);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:750;letter-spacing:-.2px}
+  .logo{width:32px;height:32px;border-radius:8px;background:#18181b;border:1px solid var(--line);display:grid;place-items:center;color:var(--accent);font-weight:800;font-family:ui-monospace,Menlo,monospace}
+  .nav-links{display:flex;gap:24px;align-items:center;color:var(--muted);font-size:14.5px}
+  .nav-links a:hover{color:var(--txt)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:11px;font-weight:650;font-size:15px;transition:transform .12s ease,box-shadow .12s ease,background .12s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn-primary{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a1207;box-shadow:0 6px 22px rgba(245,158,11,.3)}
+  .btn-ghost{border:1px solid var(--line);color:var(--txt);background:transparent}
+  .btn-ghost:hover{border-color:#3d3026;background:var(--panel)}
+  .btn-sm{padding:8px 15px;font-size:14px;border-radius:9px}
+
+  header{padding:74px 0 36px;background:radial-gradient(820px 380px at 80% -8%,rgba(245,158,11,.14),transparent 60%)}
+  .hero-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center}
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:6px 13px;border-radius:999px;font-size:13px;margin-bottom:22px}
+  .pill b{color:var(--accent)}
+  h1{font-size:clamp(33px,4.8vw,52px);line-height:1.06;font-weight:820;letter-spacing:-1.4px}
+  h1 .grad{background:linear-gradient(120deg,#fbbf24,#f59e0b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{max-width:540px;margin:20px 0 0;font-size:clamp(16px,2vw,19px);color:var(--muted)}
+  .install-box{margin:26px 0 14px;background:#08110d;border:1px solid var(--line);border-radius:11px;padding:14px 16px;font:14px/1.7 ui-monospace,Menlo,monospace;color:var(--txt);max-width:480px}
+  .install-box .p{color:var(--accent);-webkit-user-select:none;user-select:none}
+  .install-box .c{color:var(--faint);font-size:12px;display:block;margin-top:6px}
+  .cta{display:flex;gap:13px;flex-wrap:wrap;margin:18px 0 14px}
+  .meta{color:var(--faint);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px}
+  .meta b{color:var(--muted);font-weight:600}
+
+  /* signature TUI mock */
+  .winwrap{filter:drop-shadow(0 30px 60px rgba(0,0,0,.6))}
+  .term{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a0806}
+  .termbar{display:flex;align-items:center;gap:8px;padding:10px 13px;background:#120e0b;border-bottom:1px solid var(--line)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+  .termbar .name{margin-left:8px;font-size:12px;color:var(--faint)}
+  .tui{padding:14px;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt)}
+  .tui .banner{color:var(--accent);border:1px solid var(--line);border-radius:7px;padding:8px 10px;margin-bottom:11px;background:#0e0b08}
+  .tui .banner small{color:var(--faint);display:block;font-size:11px}
+  .tui .cols{display:grid;grid-template-columns:1.15fr 1fr;gap:10px}
+  .tui .col{border:1px solid var(--line);border-radius:7px;padding:9px 10px;background:#0c0a08}
+  .tui .ttl{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+  .tui .row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;color:var(--muted)}
+  .tui .row.sel{color:var(--txt);background:rgba(245,158,11,.13);border-radius:4px;padding:2px 6px;margin:0 -6px}
+  .tui .row.sel::before{content:"❯ ";color:var(--accent)}
+  .tui .on{color:var(--green)}
+  .tui .off{color:var(--dim)}
+  .tui .cat{color:var(--accent);margin-top:8px;font-size:11px}
+  .tui .detail b{color:var(--txt)}
+  .tui .detail .v{color:var(--cyan)}
+  .tui .keybar{margin-top:11px;border:1px solid var(--line);border-radius:7px;padding:7px 10px;color:var(--faint);font-size:11.5px;background:#0c0a08}
+  .tui .keybar b{color:var(--accent);font-weight:700}
+
+  section{padding:74px 0;border-top:1px solid var(--line)}
+  .eyebrow{color:var(--accent);font-weight:700;font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase}
+  .center{text-align:center}.center .eyebrow{display:block}
+  h2{font-size:clamp(27px,3.7vw,38px);font-weight:800;letter-spacing:-.7px;margin:9px 0 12px}
+  .lead{color:var(--muted);max-width:640px;font-size:17px}
+  .center .lead{margin-left:auto;margin-right:auto}
+
+  .grid{display:grid;gap:16px;margin-top:42px}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;transition:border-color .15s,transform .15s}
+  .card:hover{border-color:#3d3026;transform:translateY(-2px)}
+  .card h3{font-size:16.5px;margin-bottom:5px;letter-spacing:-.2px}
+  .card p{color:var(--muted);font-size:14.5px}
+  .ico{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:21px;margin-bottom:14px}
+
+  /* idempotent block showcase */
+  .why{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:40px;display:grid;grid-template-columns:1fr 1.05fr;gap:36px;align-items:center;margin-top:8px}
+  .codeblock{background:#08110d;border:1px solid var(--line);border-radius:11px;padding:16px;font:12.5px/1.7 ui-monospace,Menlo,monospace;overflow:auto}
+  .codeblock .cm{color:var(--faint)}
+  .codeblock .kw{color:#ff7b72}
+  .codeblock .vr{color:var(--accent)}
+  .codeblock .vl{color:var(--green)}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:42px;counter-reset:s}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;position:relative}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-14px;left:22px;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a1207;font-weight:800;display:grid;place-items:center;font-size:15px}
+  .step h3{margin:6px 0 5px;font-size:16px}
+  .step p{color:var(--muted);font-size:14.5px}
+  .step code{background:#08110d;color:var(--accent);border-radius:6px;padding:2px 7px;font:12.5px/1.4 ui-monospace,Menlo,monospace}
+
+  .final{text-align:center;background:radial-gradient(620px 280px at 50% 120%,rgba(245,158,11,.13),transparent 64%)}
+  .final .cta{justify-content:center}
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:14px;text-align:center}
+  footer a{color:var(--accent);font-weight:600}
+  code{background:#08110d;border:1px solid var(--line);border-radius:6px;padding:2px 7px;font:13px/1.4 ui-monospace,Menlo,monospace;color:var(--accent)}
+
+  @media(max-width:880px){.hero-grid,.why{grid-template-columns:1fr;gap:30px}.why{padding:26px}.g3,.steps{grid-template-columns:1fr}.nav-links a:not(.btn){display:none}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <a class="brand" href="#top"><span class="logo">&gt;_</span>homebrewconfig</a>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#how">How it works</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/vincentlauriat/homebrewconfig">GitHub</a>
+    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/homebrewconfig#installation">Install</a>
+  </div>
+</div></nav>
+
+<header id="top"><div class="wrap">
+  <div class="hero-grid">
+    <div>
+      <span class="pill">🍺 Rust · TUI + CLI · for <b>Homebrew</b></span>
+      <h1>Configure Homebrew<br><span class="grad">without editing<br>your shell profile.</span></h1>
+      <p class="sub">Browse, filter and toggle every <code class="mono">HOMEBREW_*</code> environment variable from a fast terminal UI — then write a clean, idempotent block to your profile. Re-running never duplicates a thing.</p>
+      <div class="install-box mono">
+        <span class="p">$</span> brew install vincentlauriat/tap/homebrewconfig
+        <span class="c"># …or: cargo install homebrewconfig</span>
+      </div>
+      <div class="cta">
+        <a class="btn btn-primary" href="https://github.com/vincentlauriat/homebrewconfig">View on GitHub</a>
+        <a class="btn btn-ghost" href="https://crates.io/crates/homebrewconfig">crates.io ↗</a>
+      </div>
+      <p class="meta"><b>Free &amp; open-source (MIT)</b> · Rust 1.70+ · macOS &amp; Linux · zsh / bash / fish</p>
+    </div>
+
+    <div class="winwrap">
+      <div class="term" role="img" aria-label="homebrewconfig terminal UI: a settings list, a detail panel and a keybindings bar">
+        <div class="termbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="name">homebrewconfig — ~/.zprofile</span></div>
+        <div class="tui">
+          <div class="banner">🍺 homebrewconfig v0.3.0<small>Profile: ~/.zprofile · 2 unsaved changes</small></div>
+          <div class="cols">
+            <div class="col">
+              <div class="ttl">Settings</div>
+              <div class="cat">Privacy</div>
+              <div class="row sel"><span>Analytics</span><span class="on">[ ON ]</span></div>
+              <div class="row"><span>Env Hints</span><span class="on">[ ON ]</span></div>
+              <div class="cat">Updates</div>
+              <div class="row"><span>Auto Update</span><span class="off">[ OFF ]</span></div>
+              <div class="row"><span>Install Cleanup</span><span class="on">[ ON ]</span></div>
+              <div class="row"><span>Cleanup Age</span><span class="vl" style="color:var(--cyan)">[ 30 ]</span></div>
+              <div class="cat">Display</div>
+              <div class="row"><span>Color</span><span class="on">[ ON ]</span></div>
+            </div>
+            <div class="col detail">
+              <div class="ttl">Detail</div>
+              <div><b>Analytics</b></div>
+              <div style="color:var(--muted);margin:6px 0">Disable sending analytics to Google Analytics.</div>
+              <div style="color:var(--faint)">Env var:</div>
+              <div class="v" style="color:var(--cyan)">HOMEBREW_NO_ANALYTICS</div>
+              <div style="margin-top:8px;color:var(--muted)">Status: <span class="on">● Enabled</span></div>
+              <div style="margin-top:8px;color:var(--faint)">[Space] to toggle</div>
+            </div>
+          </div>
+          <div class="keybar"><b>↑↓</b> navigate · <b>Space</b> toggle · <b>Enter</b> edit · <b>a</b> apply · <b>/</b> filter · <b>t</b> theme · <b>q</b> quit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></header>
+
+<section id="features"><div class="wrap">
+  <div class="center">
+    <p class="eyebrow"># features</p>
+    <h2>Every Homebrew knob, in one place</h2>
+    <p class="lead">22 settings across Privacy, Updates, Display, Directories, Tools, Security and Network — discoverable, documented and safe to change.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card"><div class="ico">🎛️</div><h3>All in one view</h3><p>Browse and edit every Homebrew environment variable, each with its default value shown.</p></div>
+    <div class="card"><div class="ico">🔍</div><h3>Instant filter</h3><p>Press <code class="mono">/</code> to match by name, variable, category or description as you type.</p></div>
+    <div class="card"><div class="ico">♻️</div><h3>Idempotent writes</h3><p>Writes a clean <code class="mono">BEGIN/END</code> block to your profile — re-running never duplicates exports.</p></div>
+    <div class="card"><div class="ico">🐚</div><h3>Shell auto-detection</h3><p>Finds the right profile for zsh, bash or fish, preferring the file that already holds your block.</p></div>
+    <div class="card"><div class="ico">🤖</div><h3>Scriptable CLI</h3><p><code class="mono">--set</code>, <code class="mono">--apply</code>, <code class="mono">--dry-run</code>, <code class="mono">--list</code> and <code class="mono">--json</code> run with no TUI at all.</p></div>
+    <div class="card"><div class="ico">📦</div><h3>Shareable presets</h3><p>Export your config to a TOML preset and re-apply it on another machine, forward-compatible by design.</p></div>
+    <div class="card"><div class="ico">🎨</div><h3>Themes</h3><p>Cycle colour themes with <code class="mono">t</code> — brew, midnight, forest, rose, mono — remembered across runs.</p></div>
+    <div class="card"><div class="ico">🛟</div><h3>Safe by default</h3><p>Backs up the previous profile to <code class="mono">.bak</code> and previews the exact block before writing.</p></div>
+    <div class="card"><div class="ico">📖</div><h3>Man page &amp; completions</h3><p>Ships a man page plus bash, zsh and fish completions.</p></div>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="why">
+    <div>
+      <p class="eyebrow">// how it works</p>
+      <h2 style="text-align:left">One block. Nothing else touched.</h2>
+      <p class="lead">Press <code class="mono">a</code> and homebrewconfig writes a single marked block to your shell profile. Run it again and only that block changes — the rest of your file is left exactly as it was. Delete the block to remove every managed setting at once.</p>
+    </div>
+    <div class="codeblock mono">
+<span class="cm"># homebrewconfig BEGIN</span><br>
+<span class="cm"># Generated by homebrewconfig — do not edit manually</span><br>
+<br>
+<span class="cm"># Privacy</span><br>
+<span class="kw">export</span> <span class="vr">HOMEBREW_NO_ANALYTICS</span>=<span class="vl">1</span><br>
+<br>
+<span class="cm"># Updates</span><br>
+<span class="kw">export</span> <span class="vr">HOMEBREW_CLEANUP_MAX_AGE_DAYS</span>=<span class="vl">30</span><br>
+<span class="cm"># homebrewconfig END</span>
+    </div>
+  </div>
+</div></section>
+
+<section id="install"><div class="wrap">
+  <div class="center">
+    <p class="eyebrow">get started</p>
+    <h2>Install in one line</h2>
+    <p class="lead">Needs Rust 1.70+ and a 256-color terminal. Works on macOS and Linux.</p>
+  </div>
+  <div class="steps">
+    <div class="step"><h3>Install</h3><p><code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code>.</p></div>
+    <div class="step"><h3>Run</h3><p>Launch <code>homebrewconfig</code>; it auto-detects your shell profile.</p></div>
+    <div class="step"><h3>Apply</h3><p>Toggle with <code>Space</code>, then press <code>a</code> — review the preview and confirm.</p></div>
+  </div>
+</div></section>
+
+<section class="final"><div class="wrap">
+  <p class="eyebrow">ready?</p>
+  <h2>Tidy up your Homebrew setup</h2>
+  <p class="lead" style="margin:0 auto 6px">Free, open-source, scriptable. macOS &amp; Linux, any of zsh / bash / fish.</p>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://github.com/vincentlauriat/homebrewconfig">View on GitHub</a>
+    <a class="btn btn-ghost" href="https://crates.io/crates/homebrewconfig">crates.io ↗</a>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  homebrewconfig · MIT License · © 2026 Vincent Lauriat ·
+  <a href="https://github.com/vincentlauriat/homebrewconfig">github.com/vincentlauriat/homebrewconfig</a>
+  · <a href="https://lauriat.fr/outils/homebrewconfig/">lauriat.fr</a>
+</div></footer>
+
+</body>
+</html>
