@@ -1,253 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="--accent:#f59e0b;--on-accent:#141414;--accent-ink:#966106">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>homebrewconfig — Configure Homebrew without editing your shell profile</title>
-<meta name="description" content="A terminal UI and CLI for configuring Homebrew environment variables — browse, filter and toggle every HOMEBREW_* setting, then write a clean, idempotent block to your shell profile. Rust, scriptable, free & open-source (MIT).">
-<meta property="og:title" content="homebrewconfig">
-<meta property="og:description" content="A Rust TUI + CLI to manage every HOMEBREW_* environment variable and write a clean, idempotent block to your shell profile.">
+<meta name="description" content="A terminal UI and CLI for configuring Homebrew environment variables — browse, filter and toggle every HOMEBREW_* setting, then write a clean, idempotent block to your shell profile. Rust, scriptable, free &amp; open-source (MIT).">
+<meta name="theme-color" content="#eff1f2">
 <meta property="og:type" content="website">
+<meta property="og:title" content="homebrewconfig — Configure Homebrew without editing your shell profile">
+<meta property="og:description" content="A terminal UI and CLI for configuring Homebrew environment variables — browse, filter and toggle every HOMEBREW_* setting, then write a clean, idempotent block to your shell profile. Rust, scriptable, free &amp; open-source (MIT).">
+<meta property="og:url" content="https://vincentlauriat.github.io/homebrewconfig/">
+
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2318181b'/%3E%3Ctext x='14' y='62' font-size='34' font-family='monospace' font-weight='800' fill='%23f59e0b'%3E%26gt;_%3C/text%3E%3C/svg%3E">
-<style>
-  :root{
-    --bg:#0c0a09; --bg2:#14110f; --panel:#1a1613; --line:#2c241d;
-    --txt:#f2ece4; --muted:#b3a394; --faint:#80715f;
-    --accent:#f59e0b; --accent2:#fbbf24; --accent-soft:rgba(245,158,11,.14);
-    --green:#86efac; --cyan:#67e8f9; --dim:#6b7280;
-    --maxw:1100px;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
-  body{background:var(--bg);color:var(--txt);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  a{color:inherit;text-decoration:none}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,"Cascadia Code",monospace}
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 100 100&#x27;%3E%3Crect width=&#x27;100&#x27; height=&#x27;100&#x27; rx=&#x27;22&#x27; fill=&#x27;%2318181b&#x27;/%3E%3Ctext x=&#x27;14&#x27; y=&#x27;62&#x27; font-size=&#x27;34&#x27; font-family=&#x27;monospace&#x27; font-weight=&#x27;800&#x27; fill=&#x27;%23f59e0b&#x27;%3E%26gt;_%3C/text%3E%3C/svg%3E">
+<link rel="preload" href="/assets/schibsted.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/monograph/v1/monograph.css">
 
-  nav{position:sticky;top:0;z-index:20;backdrop-filter:saturate(160%) blur(12px);background:rgba(12,10,9,.74);border-bottom:1px solid var(--line)}
-  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:62px}
-  .brand{display:flex;align-items:center;gap:11px;font-weight:750;letter-spacing:-.2px}
-  .logo{width:32px;height:32px;border-radius:8px;background:#18181b;border:1px solid var(--line);display:grid;place-items:center;color:var(--accent);font-weight:800;font-family:ui-monospace,Menlo,monospace}
-  .nav-links{display:flex;gap:24px;align-items:center;color:var(--muted);font-size:14.5px}
-  .nav-links a:hover{color:var(--txt)}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:11px;font-weight:650;font-size:15px;transition:transform .12s ease,box-shadow .12s ease,background .12s}
-  .btn:hover{transform:translateY(-1px)}
-  .btn-primary{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a1207;box-shadow:0 6px 22px rgba(245,158,11,.3)}
-  .btn-ghost{border:1px solid var(--line);color:var(--txt);background:transparent}
-  .btn-ghost:hover{border-color:#3d3026;background:var(--panel)}
-  .btn-sm{padding:8px 15px;font-size:14px;border-radius:9px}
-
-  header{padding:74px 0 36px;background:radial-gradient(820px 380px at 80% -8%,rgba(245,158,11,.14),transparent 60%)}
-  .hero-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center}
-  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);padding:6px 13px;border-radius:999px;font-size:13px;margin-bottom:22px}
-  .pill b{color:var(--accent)}
-  h1{font-size:clamp(33px,4.8vw,52px);line-height:1.06;font-weight:820;letter-spacing:-1.4px}
-  h1 .grad{background:linear-gradient(120deg,#fbbf24,#f59e0b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .sub{max-width:540px;margin:20px 0 0;font-size:clamp(16px,2vw,19px);color:var(--muted)}
-  .install-box{margin:26px 0 14px;background:#08110d;border:1px solid var(--line);border-radius:11px;padding:14px 16px;font:14px/1.7 ui-monospace,Menlo,monospace;color:var(--txt);max-width:480px}
-  .install-box .p{color:var(--accent);-webkit-user-select:none;user-select:none}
-  .install-box .c{color:var(--faint);font-size:12px;display:block;margin-top:6px}
-  .cta{display:flex;gap:13px;flex-wrap:wrap;margin:18px 0 14px}
-  .meta{color:var(--faint);font-size:13px;display:flex;flex-wrap:wrap;gap:6px 14px}
-  .meta b{color:var(--muted);font-weight:600}
-
-  /* signature TUI mock */
-  .winwrap{filter:drop-shadow(0 30px 60px rgba(0,0,0,.6))}
-  .term{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#0a0806}
-  .termbar{display:flex;align-items:center;gap:8px;padding:10px 13px;background:#120e0b;border-bottom:1px solid var(--line)}
-  .dot{width:11px;height:11px;border-radius:50%}
-  .dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
-  .termbar .name{margin-left:8px;font-size:12px;color:var(--faint)}
-  .tui{padding:14px;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--txt)}
-  .tui .banner{color:var(--accent);border:1px solid var(--line);border-radius:7px;padding:8px 10px;margin-bottom:11px;background:#0e0b08}
-  .tui .banner small{color:var(--faint);display:block;font-size:11px}
-  .tui .cols{display:grid;grid-template-columns:1.15fr 1fr;gap:10px}
-  .tui .col{border:1px solid var(--line);border-radius:7px;padding:9px 10px;background:#0c0a08}
-  .tui .ttl{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
-  .tui .row{display:flex;justify-content:space-between;gap:8px;padding:2px 0;color:var(--muted)}
-  .tui .row.sel{color:var(--txt);background:rgba(245,158,11,.13);border-radius:4px;padding:2px 6px;margin:0 -6px}
-  .tui .row.sel::before{content:"❯ ";color:var(--accent)}
-  .tui .on{color:var(--green)}
-  .tui .off{color:var(--dim)}
-  .tui .cat{color:var(--accent);margin-top:8px;font-size:11px}
-  .tui .detail b{color:var(--txt)}
-  .tui .detail .v{color:var(--cyan)}
-  .tui .keybar{margin-top:11px;border:1px solid var(--line);border-radius:7px;padding:7px 10px;color:var(--faint);font-size:11.5px;background:#0c0a08}
-  .tui .keybar b{color:var(--accent);font-weight:700}
-
-  section{padding:74px 0;border-top:1px solid var(--line)}
-  .eyebrow{color:var(--accent);font-weight:700;font-size:12.5px;letter-spacing:1.4px;text-transform:uppercase}
-  .center{text-align:center}.center .eyebrow{display:block}
-  h2{font-size:clamp(27px,3.7vw,38px);font-weight:800;letter-spacing:-.7px;margin:9px 0 12px}
-  .lead{color:var(--muted);max-width:640px;font-size:17px}
-  .center .lead{margin-left:auto;margin-right:auto}
-
-  .grid{display:grid;gap:16px;margin-top:42px}
-  .g3{grid-template-columns:repeat(3,1fr)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;transition:border-color .15s,transform .15s}
-  .card:hover{border-color:#3d3026;transform:translateY(-2px)}
-  .card h3{font-size:16.5px;margin-bottom:5px;letter-spacing:-.2px}
-  .card p{color:var(--muted);font-size:14.5px}
-  .ico{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:21px;margin-bottom:14px}
-
-  /* idempotent block showcase */
-  .why{background:var(--bg2);border:1px solid var(--line);border-radius:18px;padding:40px;display:grid;grid-template-columns:1fr 1.05fr;gap:36px;align-items:center;margin-top:8px}
-  .codeblock{background:#08110d;border:1px solid var(--line);border-radius:11px;padding:16px;font:12.5px/1.7 ui-monospace,Menlo,monospace;overflow:auto}
-  .codeblock .cm{color:var(--faint)}
-  .codeblock .kw{color:#ff7b72}
-  .codeblock .vr{color:var(--accent)}
-  .codeblock .vl{color:var(--green)}
-
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:42px;counter-reset:s}
-  .step{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;position:relative}
-  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-14px;left:22px;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#1a1207;font-weight:800;display:grid;place-items:center;font-size:15px}
-  .step h3{margin:6px 0 5px;font-size:16px}
-  .step p{color:var(--muted);font-size:14.5px}
-  .step code{background:#08110d;color:var(--accent);border-radius:6px;padding:2px 7px;font:12.5px/1.4 ui-monospace,Menlo,monospace}
-
-  .final{text-align:center;background:radial-gradient(620px 280px at 50% 120%,rgba(245,158,11,.13),transparent 64%)}
-  .final .cta{justify-content:center}
-  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--muted);font-size:14px;text-align:center}
-  footer a{color:var(--accent);font-weight:600}
-  code{background:#08110d;border:1px solid var(--line);border-radius:6px;padding:2px 7px;font:13px/1.4 ui-monospace,Menlo,monospace;color:var(--accent)}
-
-  @media(max-width:880px){.hero-grid,.why{grid-template-columns:1fr;gap:30px}.why{padding:26px}.g3,.steps{grid-template-columns:1fr}.nav-links a:not(.btn){display:none}}
-</style>
 </head>
 <body>
-
-<nav><div class="wrap">
-  <a class="brand" href="#top"><span class="logo">&gt;_</span>homebrewconfig</a>
-  <div class="nav-links">
-    <a href="#features">Features</a>
-    <a href="#how">How it works</a>
-    <a href="#install">Install</a>
-    <a href="https://github.com/vincentlauriat/homebrewconfig">GitHub</a>
-    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/homebrewconfig#installation">Install</a>
-  </div>
-</div></nav>
-
-<header id="top"><div class="wrap">
-  <div class="hero-grid">
-    <div>
-      <span class="pill">🍺 Rust · TUI + CLI · for <b>Homebrew</b></span>
-      <h1>Configure Homebrew<br><span class="grad">without editing<br>your shell profile.</span></h1>
-      <p class="sub">Browse, filter and toggle every <code class="mono">HOMEBREW_*</code> environment variable from a fast terminal UI — then write a clean, idempotent block to your profile. Re-running never duplicates a thing.</p>
-      <div class="install-box mono">
-        <span class="p">$</span> brew install vincentlauriat/tap/homebrewconfig
-        <span class="c"># …or: cargo install homebrewconfig</span>
-      </div>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/vincentlauriat/homebrewconfig">View on GitHub</a>
-        <a class="btn btn-ghost" href="https://crates.io/crates/homebrewconfig">crates.io ↗</a>
-      </div>
-      <p class="meta"><b>Free &amp; open-source (MIT)</b> · Rust 1.70+ · macOS &amp; Linux · zsh / bash / fish</p>
-    </div>
-
-    <div class="winwrap">
-      <div class="term" role="img" aria-label="homebrewconfig terminal UI: a settings list, a detail panel and a keybindings bar">
-        <div class="termbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="name">homebrewconfig — ~/.zprofile</span></div>
-        <div class="tui">
-          <div class="banner">🍺 homebrewconfig v0.3.0<small>Profile: ~/.zprofile · 2 unsaved changes</small></div>
-          <div class="cols">
-            <div class="col">
-              <div class="ttl">Settings</div>
-              <div class="cat">Privacy</div>
-              <div class="row sel"><span>Analytics</span><span class="on">[ ON ]</span></div>
-              <div class="row"><span>Env Hints</span><span class="on">[ ON ]</span></div>
-              <div class="cat">Updates</div>
-              <div class="row"><span>Auto Update</span><span class="off">[ OFF ]</span></div>
-              <div class="row"><span>Install Cleanup</span><span class="on">[ ON ]</span></div>
-              <div class="row"><span>Cleanup Age</span><span class="vl" style="color:var(--cyan)">[ 30 ]</span></div>
-              <div class="cat">Display</div>
-              <div class="row"><span>Color</span><span class="on">[ ON ]</span></div>
-            </div>
-            <div class="col detail">
-              <div class="ttl">Detail</div>
-              <div><b>Analytics</b></div>
-              <div style="color:var(--muted);margin:6px 0">Disable sending analytics to Google Analytics.</div>
-              <div style="color:var(--faint)">Env var:</div>
-              <div class="v" style="color:var(--cyan)">HOMEBREW_NO_ANALYTICS</div>
-              <div style="margin-top:8px;color:var(--muted)">Status: <span class="on">● Enabled</span></div>
-              <div style="margin-top:8px;color:var(--faint)">[Space] to toggle</div>
-            </div>
-          </div>
-          <div class="keybar"><b>↑↓</b> navigate · <b>Space</b> toggle · <b>Enter</b> edit · <b>a</b> apply · <b>/</b> filter · <b>t</b> theme · <b>q</b> quit</div>
-        </div>
-      </div>
-    </div>
-  </div>
+<a class="skip" href="#content"><span class="en">Skip to content</span><span class="fr">Aller au contenu</span><span class="zh">跳至內容</span></a>
+<header class="running"><div class="wrap">
+<a class="back" href="https://vincentlauriat.github.io/#w11"><svg class="arw l" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg><span class="en">Vincent Lauriat</span><span class="fr">Vincent Lauriat</span><span class="zh">Vincent Lauriat</span></a>
+<span class="here"><span class="num">11</span> · homebrewconfig</span>
+<div class="langs" role="group" aria-label="Language / Langue / 語言"><button type="button" data-lang="en" aria-pressed="false">EN</button><button type="button" data-lang="fr" aria-pressed="false">FR</button><button type="button" data-lang="zh" aria-pressed="false">中文</button></div>
+<a class="gh" href="https://github.com/vincentlauriat/homebrewconfig">GitHub</a>
 </div></header>
-
-<section id="features"><div class="wrap">
-  <div class="center">
-    <p class="eyebrow"># features</p>
-    <h2>Every Homebrew knob, in one place</h2>
-    <p class="lead">22 settings across Privacy, Updates, Display, Directories, Tools, Security and Network — discoverable, documented and safe to change.</p>
-  </div>
-  <div class="grid g3">
-    <div class="card"><div class="ico">🎛️</div><h3>All in one view</h3><p>Browse and edit every Homebrew environment variable, each with its default value shown.</p></div>
-    <div class="card"><div class="ico">🔍</div><h3>Instant filter</h3><p>Press <code class="mono">/</code> to match by name, variable, category or description as you type.</p></div>
-    <div class="card"><div class="ico">♻️</div><h3>Idempotent writes</h3><p>Writes a clean <code class="mono">BEGIN/END</code> block to your profile — re-running never duplicates exports.</p></div>
-    <div class="card"><div class="ico">🐚</div><h3>Shell auto-detection</h3><p>Finds the right profile for zsh, bash or fish, preferring the file that already holds your block.</p></div>
-    <div class="card"><div class="ico">🤖</div><h3>Scriptable CLI</h3><p><code class="mono">--set</code>, <code class="mono">--apply</code>, <code class="mono">--dry-run</code>, <code class="mono">--list</code> and <code class="mono">--json</code> run with no TUI at all.</p></div>
-    <div class="card"><div class="ico">📦</div><h3>Shareable presets</h3><p>Export your config to a TOML preset and re-apply it on another machine, forward-compatible by design.</p></div>
-    <div class="card"><div class="ico">🎨</div><h3>Themes</h3><p>Cycle colour themes with <code class="mono">t</code> — brew, midnight, forest, rose, mono — remembered across runs.</p></div>
-    <div class="card"><div class="ico">🛟</div><h3>Safe by default</h3><p>Backs up the previous profile to <code class="mono">.bak</code> and previews the exact block before writing.</p></div>
-    <div class="card"><div class="ico">📖</div><h3>Man page &amp; completions</h3><p>Ships a man page plus bash, zsh and fish completions.</p></div>
-  </div>
+<main>
+<section class="title"><div class="wrap g12">
+<h1 class="nm long" style="--len:14"><span class="no" aria-label="Work no. 11">11</span><span>homebrewconfig</span></h1>
+<p class="role"><span class="en">Rust · TUI + CLI · for Homebrew</span><span class="fr">Rust · TUI + CLI · pour Homebrew</span><span class="zh">Rust · TUI + CLI · 為 Homebrew 打造</span></p>
+<div class="t-left">
+<p class="thesis"><span class="en">Configure Homebrew without editing your shell profile.</span><span class="fr">Configurez Homebrew sans éditer votre profil shell.</span><span class="zh">設定 Homebrew，不必動手編輯你的 shell 設定檔。</span></p>
+<p class='lede'><span class="en">Browse, filter and toggle every <code>HOMEBREW_*</code> environment variable from a fast terminal UI — then write a clean, idempotent block to your profile. Re-running never duplicates a thing.</span><span class="fr">Parcourez, filtrez et activez chaque variable d'environnement <code>HOMEBREW_*</code> depuis une interface terminal rapide — puis écrivez un bloc propre et idempotent dans votre profil. Le relancer ne duplique jamais rien.</span><span class="zh">在快速的終端機介面中瀏覽、篩選並切換每一個 <code>HOMEBREW_*</code> 環境變數——再把一個乾淨、冪等的區塊寫入你的設定檔。重複執行也絕不會產生重複內容。</span></p>
+<div class="acts"><a class="btn" href="https://github.com/vincentlauriat/homebrewconfig#installation"><span class="en">Install</span><span class="fr">Installer</span><span class="zh">安裝</span></a><a class="lnk" href="https://github.com/vincentlauriat/homebrewconfig"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span><svg class="arw" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a><a class="lnk" href="https://crates.io/crates/homebrewconfig">crates.io<svg class="arw" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></div>
+<dl class="facts"><div><dt><span class="en">Install</span><span class="fr">Installation</span><span class="zh">安裝</span></dt><dd><span class="en"><code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code></span><span class="fr"><code>brew install vincentlauriat/tap/homebrewconfig</code> — ou <code>cargo install homebrewconfig</code></span><span class="zh"><code>brew install vincentlauriat/tap/homebrewconfig</code>——或 <code>cargo install homebrewconfig</code></span></dd></div><div><dt><span class="en">Requires</span><span class="fr">Configuration</span><span class="zh">系統需求</span></dt><dd><span class="en">Rust 1.70+ · macOS &amp; Linux</span><span class="fr">Rust 1.70+ · macOS et Linux</span><span class="zh">Rust 1.70+ · macOS 與 Linux</span></dd></div><div><dt><span class="en">Shells</span><span class="fr">Shells</span><span class="zh">Shell</span></dt><dd>zsh / bash / fish</dd></div><div><dt><span class="en">Licence</span><span class="fr">Licence</span><span class="zh">授權</span></dt><dd><span class="en">Free &amp; open-source (MIT)</span><span class="fr">Gratuit et open source (MIT)</span><span class="zh">免費開源（MIT）</span></dd></div></dl>
+</div>
+<div class="t-right"></div>
 </div></section>
+<section class="opener" id="content"><div class="wrap"><div class="op-grid"><div class="numeral" aria-hidden="true">11</div><div class="op-text"><h2><span class="en">Every Homebrew knob, in one place</span><span class="fr">Tous les réglages de Homebrew, au même endroit</span><span class="zh">Homebrew 的每個開關，集中在一處</span></h2><p><span class="en">22 settings across Privacy, Updates, Display, Directories, Tools, Security and Network — discoverable, documented and safe to change.</span><span class="fr">22 réglages répartis entre Confidentialité, Mises à jour, Affichage, Répertoires, Outils, Sécurité et Réseau — faciles à trouver, documentés et sans risque à modifier.</span><span class="zh">22 項設定，涵蓋隱私、更新、顯示、目錄、工具、安全與網路——容易找到、附有說明，且可安心修改。</span></p></div></div></div></section>
+<section class="chapter"><div class="wrap"><ul class="specs"><li><h3><span class="en">All in one view</span><span class="fr">Tout en une vue</span><span class="zh">一個畫面看全部</span></h3><div><p><span class="en">Browse and edit every Homebrew environment variable, each with its default value shown.</span><span class="fr">Parcourez et modifiez chaque variable d'environnement Homebrew, chacune avec sa valeur par défaut affichée.</span><span class="zh">瀏覽並編輯每一個 Homebrew 環境變數，每項都會顯示其預設值。</span></p></div></li><li><h3><span class="en">Instant filter</span><span class="fr">Filtre instantané</span><span class="zh">即時篩選</span></h3><div><p><span class="en">Press <code>/</code> to match by name, variable, category or description as you type.</span><span class="fr">Appuyez sur <code>/</code> pour filtrer par nom, variable, catégorie ou description au fil de la frappe.</span><span class="zh">按下 <code>/</code>，邊打字邊依名稱、變數、類別或說明比對。</span></p></div></li><li><h3><span class="en">Idempotent writes</span><span class="fr">Écritures idempotentes</span><span class="zh">冪等寫入</span></h3><div><p><span class="en">Writes a clean <code>BEGIN/END</code> block to your profile — re-running never duplicates exports.</span><span class="fr">Écrit un bloc <code>BEGIN/END</code> propre dans votre profil — le relancer ne duplique jamais les exports.</span><span class="zh">在你的設定檔中寫入一個乾淨的 <code>BEGIN/END</code> 區塊——重複執行絕不會產生重複的 export。</span></p></div></li><li><h3><span class="en">Shell auto-detection</span><span class="fr">Détection automatique du shell</span><span class="zh">自動偵測 shell</span></h3><div><p><span class="en">Finds the right profile for zsh, bash or fish, preferring the file that already holds your block.</span><span class="fr">Trouve le bon profil pour zsh, bash ou fish, en privilégiant le fichier qui contient déjà votre bloc.</span><span class="zh">為 zsh、bash 或 fish 找出正確的設定檔，並優先選用已經含有你區塊的那個檔案。</span></p></div></li><li><h3><span class="en">Scriptable CLI</span><span class="fr">CLI scriptable</span><span class="zh">可腳本化的 CLI</span></h3><div><p><span class="en"><code>--set</code>, <code>--apply</code>, <code>--dry-run</code>, <code>--list</code> and <code>--json</code> run with no TUI at all.</span><span class="fr"><code>--set</code>, <code>--apply</code>, <code>--dry-run</code>, <code>--list</code> et <code>--json</code> fonctionnent sans aucune TUI.</span><span class="zh"><code>--set</code>、<code>--apply</code>、<code>--dry-run</code>、<code>--list</code> 與 <code>--json</code> 完全不需要 TUI 即可執行。</span></p></div></li><li><h3><span class="en">Shareable presets</span><span class="fr">Préréglages partageables</span><span class="zh">可分享的預設組</span></h3><div><p><span class="en">Export your config to a TOML preset and re-apply it on another machine, forward-compatible by design.</span><span class="fr">Exportez votre configuration dans un préréglage TOML et réappliquez-la sur une autre machine, compatible avec les versions futures par conception.</span><span class="zh">把你的設定匯出成 TOML 預設組，再套用到另一台機器；設計上即向前相容。</span></p></div></li><li><h3><span class="en">Themes</span><span class="fr">Thèmes</span><span class="zh">主題</span></h3><div><p><span class="en">Cycle colour themes with <code>t</code> — brew, midnight, forest, rose, mono — remembered across runs.</span><span class="fr">Faites défiler les thèmes de couleur avec <code>t</code> — brew, midnight, forest, rose, mono — mémorisés d'une exécution à l'autre.</span><span class="zh">按 <code>t</code> 輪換配色主題——brew、midnight、forest、rose、mono——每次執行都會記住。</span></p></div></li><li><h3><span class="en">Safe by default</span><span class="fr">Sûr par défaut</span><span class="zh">預設安全</span></h3><div><p><span class="en">Backs up the previous profile to <code>.bak</code> and previews the exact block before writing.</span><span class="fr">Sauvegarde le profil précédent en <code>.bak</code> et affiche un aperçu du bloc exact avant d'écrire.</span><span class="zh">寫入前會把原本的設定檔備份為 <code>.bak</code>，並預覽將寫入的確切區塊。</span></p></div></li><li><h3><span class="en">Man page &amp; completions</span><span class="fr">Page man et complétions</span><span class="zh">Man 手冊與自動補全</span></h3><div><p><span class="en">Ships a man page plus bash, zsh and fish completions.</span><span class="fr">Livré avec une page man et des complétions bash, zsh et fish.</span><span class="zh">隨附 man 手冊，以及 bash、zsh 與 fish 的自動補全。</span></p></div></li></ul></div></section>
+<section class="chapter" id="how"><div class="wrap g12"><div class="ch-head"><h2><span class="en">One block. Nothing else touched.</span><span class="fr">Un seul bloc. Rien d'autre n'est touché.</span><span class="zh">只有一個區塊，其他一概不動。</span></h2><p><span class="en">Press <code>a</code> and homebrewconfig writes a single marked block to your shell profile. Run it again and only that block changes — the rest of your file is left exactly as it was. Delete the block to remove every managed setting at once.</span><span class="fr">Appuyez sur <code>a</code> et homebrewconfig écrit un unique bloc balisé dans votre profil shell. Relancez-le et seul ce bloc change — le reste de votre fichier reste exactement tel quel. Supprimez le bloc pour retirer d'un coup tous les réglages gérés.</span><span class="zh">按下 <code>a</code>，homebrewconfig 就會在你的 shell 設定檔中寫入一個有標記的區塊。再執行一次，只有那個區塊會改變——檔案的其餘部分完全保持原樣。刪除這個區塊，即可一次移除所有受管理的設定。</span></p></div><div class="ch-body"><pre><code># homebrewconfig BEGIN
+# Generated by homebrewconfig — do not edit manually
 
-<section id="how"><div class="wrap">
-  <div class="why">
-    <div>
-      <p class="eyebrow">// how it works</p>
-      <h2 style="text-align:left">One block. Nothing else touched.</h2>
-      <p class="lead">Press <code class="mono">a</code> and homebrewconfig writes a single marked block to your shell profile. Run it again and only that block changes — the rest of your file is left exactly as it was. Delete the block to remove every managed setting at once.</p>
-    </div>
-    <div class="codeblock mono">
-<span class="cm"># homebrewconfig BEGIN</span><br>
-<span class="cm"># Generated by homebrewconfig — do not edit manually</span><br>
-<br>
-<span class="cm"># Privacy</span><br>
-<span class="kw">export</span> <span class="vr">HOMEBREW_NO_ANALYTICS</span>=<span class="vl">1</span><br>
-<br>
-<span class="cm"># Updates</span><br>
-<span class="kw">export</span> <span class="vr">HOMEBREW_CLEANUP_MAX_AGE_DAYS</span>=<span class="vl">30</span><br>
-<span class="cm"># homebrewconfig END</span>
-    </div>
-  </div>
-</div></section>
+# Privacy
+export HOMEBREW_NO_ANALYTICS=1
 
-<section id="install"><div class="wrap">
-  <div class="center">
-    <p class="eyebrow">get started</p>
-    <h2>Install in one line</h2>
-    <p class="lead">Needs Rust 1.70+ and a 256-color terminal. Works on macOS and Linux.</p>
-  </div>
-  <div class="steps">
-    <div class="step"><h3>Install</h3><p><code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code>.</p></div>
-    <div class="step"><h3>Run</h3><p>Launch <code>homebrewconfig</code>; it auto-detects your shell profile.</p></div>
-    <div class="step"><h3>Apply</h3><p>Toggle with <code>Space</code>, then press <code>a</code> — review the preview and confirm.</p></div>
-  </div>
-</div></section>
-
-<section class="final"><div class="wrap">
-  <p class="eyebrow">ready?</p>
-  <h2>Tidy up your Homebrew setup</h2>
-  <p class="lead" style="margin:0 auto 6px">Free, open-source, scriptable. macOS &amp; Linux, any of zsh / bash / fish.</p>
-  <div class="cta">
-    <a class="btn btn-primary" href="https://github.com/vincentlauriat/homebrewconfig">View on GitHub</a>
-    <a class="btn btn-ghost" href="https://crates.io/crates/homebrewconfig">crates.io ↗</a>
-  </div>
-</div></section>
-
-<footer><div class="wrap">
-  homebrewconfig · MIT License · © 2026 Vincent Lauriat ·
-  <a href="https://github.com/vincentlauriat/homebrewconfig">github.com/vincentlauriat/homebrewconfig</a>
-  · <a href="https://lauriat.fr/outils/homebrewconfig/">lauriat.fr</a>
-</div></footer>
-
+# Updates
+export HOMEBREW_CLEANUP_MAX_AGE_DAYS=30
+# homebrewconfig END</code></pre></div></div></section><section class="chapter" id="install"><div class="wrap g12"><div class="ch-head"><h2><span class="en">Install in one line</span><span class="fr">Installation en une ligne</span><span class="zh">一行指令完成安裝</span></h2><p><span class="en">Needs Rust 1.70+ and a 256-color terminal. Works on macOS and Linux.</span><span class="fr">Nécessite Rust 1.70+ et un terminal 256 couleurs. Fonctionne sur macOS et Linux.</span><span class="zh">需要 Rust 1.70+ 與支援 256 色的終端機。可在 macOS 與 Linux 上執行。</span></p></div><div class="ch-body"><ol class="steps"><li><p><span class="en"><b>Install.</b> <code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code>.</span><span class="fr"><b>Installer.</b> <code>brew install vincentlauriat/tap/homebrewconfig</code> — ou <code>cargo install homebrewconfig</code>.</span><span class="zh"><b>安裝。</b><code>brew install vincentlauriat/tap/homebrewconfig</code>——或 <code>cargo install homebrewconfig</code>。</span></p></li><li><p><span class="en"><b>Run.</b> Launch <code>homebrewconfig</code>; it auto-detects your shell profile.</span><span class="fr"><b>Lancer.</b> Lancez <code>homebrewconfig</code> ; il détecte automatiquement votre profil shell.</span><span class="zh"><b>執行。</b>啟動 <code>homebrewconfig</code>；它會自動偵測你的 shell 設定檔。</span></p></li><li><p><span class="en"><b>Apply.</b> Toggle with <code>Space</code>, then press <code>a</code> — review the preview and confirm.</span><span class="fr"><b>Appliquer.</b> Basculez avec <code>Espace</code>, puis appuyez sur <code>a</code> — vérifiez l'aperçu et confirmez.</span><span class="zh"><b>套用。</b>用 <code>Space</code> 切換，然後按 <code>a</code>——檢查預覽並確認。</span></p></li></ol></div></div></section>
+<section class="close"><div class="wrap g12"><h2><span class="en">Tidy up your Homebrew setup</span><span class="fr">Faites le ménage dans votre configuration Homebrew</span><span class="zh">整理好你的 Homebrew 設定</span></h2><div class="c-r"><p><span class="en">Free, open-source, scriptable. macOS &amp; Linux, any of zsh / bash / fish.</span><span class="fr">Gratuit, open source, scriptable. macOS et Linux, avec zsh, bash ou fish.</span><span class="zh">免費、開源、可腳本化。支援 macOS 與 Linux，zsh／bash／fish 皆可。</span></p><div class="acts"><a class="btn" href="https://github.com/vincentlauriat/homebrewconfig"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span></a><a class="lnk" href="https://crates.io/crates/homebrewconfig">crates.io<svg class="arw" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg></a></div></div></div></section>
+</main>
+<footer class="colophon"><div class="wrap g12"><div class="c1"><h2>homebrewconfig</h2><p><span class="en">Work no.</span><span class="fr">Réalisation n°</span><span class="zh">作品編號</span> <span class="num">11</span> <span class="en">in the works of Vincent Lauriat</span><span class="fr">dans les réalisations de Vincent Lauriat</span><span class="zh">收錄於 Vincent Lauriat 作品集</span>.</p><p><a href="https://vincentlauriat.github.io/#w11"><span class="en">All works</span><span class="fr">Toutes les réalisations</span><span class="zh">全部作品</span></a></p></div><div class="c2"><h2><span class="en">Source</span><span class="fr">Source</span><span class="zh">原始碼</span></h2><p><a href="https://github.com/vincentlauriat/homebrewconfig">github.com/vincentlauriat/homebrewconfig</a></p><p><span class="en">MIT License</span><span class="fr">Licence MIT</span><span class="zh">MIT 授權</span> · © 2026 Vincent Lauriat</p><p><a href="https://lauriat.fr/outils/homebrewconfig/">lauriat.fr</a></p></div><div class="c3"><h2><span class="en">About this page</span><span class="fr">À propos de cette page</span><span class="zh">關於本頁</span></h2><p><span class="en">Set in Schibsted Grotesk, on the grid of the book it belongs to.</span><span class="fr">Composée en Schibsted Grotesk, sur la grille du livre auquel elle appartient.</span><span class="zh">以 Schibsted Grotesk 排版，沿用其所屬作品集的網格。</span></p></div></div></footer>
+<script src="/assets/monograph/v1/monograph.js"></script>
 </body>
 </html>

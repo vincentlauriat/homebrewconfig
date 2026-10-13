@@ -1,0 +1,131 @@
+{
+  "name": "homebrewconfig",
+  "no": "11",
+  "repo": "vincentlauriat/homebrewconfig",
+  "url": "https://vincentlauriat.github.io/homebrewconfig/",
+  "accent": "#f59e0b",
+  "meta": {
+    "title": "homebrewconfig — Configure Homebrew without editing your shell profile",
+    "description": "A terminal UI and CLI for configuring Homebrew environment variables — browse, filter and toggle every HOMEBREW_* setting, then write a clean, idempotent block to your shell profile. Rust, scriptable, free & open-source (MIT).",
+    "favicon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2318181b'/%3E%3Ctext x='14' y='62' font-size='34' font-family='monospace' font-weight='800' fill='%23f59e0b'%3E%26gt;_%3C/text%3E%3C/svg%3E"
+  },
+  "role": {
+    "en": "Rust · TUI + CLI · for Homebrew",
+    "fr": "Rust · TUI + CLI · pour Homebrew",
+    "zh": "Rust · TUI + CLI · 為 Homebrew 打造"
+  },
+  "thesis": {
+    "en": "Configure Homebrew without editing your shell profile.",
+    "fr": "Configurez Homebrew sans éditer votre profil shell.",
+    "zh": "設定 Homebrew，不必動手編輯你的 shell 設定檔。"
+  },
+  "lede": {
+    "en": "Browse, filter and toggle every <code>HOMEBREW_*</code> environment variable from a fast terminal UI — then write a clean, idempotent block to your profile. Re-running never duplicates a thing.",
+    "fr": "Parcourez, filtrez et activez chaque variable d'environnement <code>HOMEBREW_*</code> depuis une interface terminal rapide — puis écrivez un bloc propre et idempotent dans votre profil. Le relancer ne duplique jamais rien.",
+    "zh": "在快速的終端機介面中瀏覽、篩選並切換每一個 <code>HOMEBREW_*</code> 環境變數——再把一個乾淨、冪等的區塊寫入你的設定檔。重複執行也絕不會產生重複內容。"
+  },
+  "actions": [
+    {"primary": true, "href": "https://github.com/vincentlauriat/homebrewconfig#installation",
+     "label": {"en": "Install", "fr": "Installer", "zh": "安裝"}},
+    {"href": "https://github.com/vincentlauriat/homebrewconfig",
+     "label": {"en": "View on GitHub", "fr": "Voir sur GitHub", "zh": "在 GitHub 上檢視"}},
+    {"href": "https://crates.io/crates/homebrewconfig", "label": "crates.io"}
+  ],
+  "facts": [
+    {"k": {"en": "Install", "fr": "Installation", "zh": "安裝"},
+     "v": {"en": "<code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code>",
+           "fr": "<code>brew install vincentlauriat/tap/homebrewconfig</code> — ou <code>cargo install homebrewconfig</code>",
+           "zh": "<code>brew install vincentlauriat/tap/homebrewconfig</code>——或 <code>cargo install homebrewconfig</code>"}},
+    {"k": {"en": "Requires", "fr": "Configuration", "zh": "系統需求"},
+     "v": {"en": "Rust 1.70+ · macOS &amp; Linux", "fr": "Rust 1.70+ · macOS et Linux", "zh": "Rust 1.70+ · macOS 與 Linux"}},
+    {"k": {"en": "Shells", "fr": "Shells", "zh": "Shell"}, "v": "zsh / bash / fish"},
+    {"k": {"en": "Licence", "fr": "Licence", "zh": "授權"},
+     "v": {"en": "Free &amp; open-source (MIT)", "fr": "Gratuit et open source (MIT)", "zh": "免費開源（MIT）"}}
+  ],
+  "opener": {
+    "h": {"en": "Every Homebrew knob, in one place", "fr": "Tous les réglages de Homebrew, au même endroit", "zh": "Homebrew 的每個開關，集中在一處"},
+    "p": {"en": "22 settings across Privacy, Updates, Display, Directories, Tools, Security and Network — discoverable, documented and safe to change.",
+          "fr": "22 réglages répartis entre Confidentialité, Mises à jour, Affichage, Répertoires, Outils, Sécurité et Réseau — faciles à trouver, documentés et sans risque à modifier.",
+          "zh": "22 項設定，涵蓋隱私、更新、顯示、目錄、工具、安全與網路——容易找到、附有說明，且可安心修改。"}
+  },
+  "features": [
+    {"h": {"en": "All in one view", "fr": "Tout en une vue", "zh": "一個畫面看全部"},
+     "p": {"en": "Browse and edit every Homebrew environment variable, each with its default value shown.",
+           "fr": "Parcourez et modifiez chaque variable d'environnement Homebrew, chacune avec sa valeur par défaut affichée.",
+           "zh": "瀏覽並編輯每一個 Homebrew 環境變數，每項都會顯示其預設值。"}},
+    {"h": {"en": "Instant filter", "fr": "Filtre instantané", "zh": "即時篩選"},
+     "p": {"en": "Press <code>/</code> to match by name, variable, category or description as you type.",
+           "fr": "Appuyez sur <code>/</code> pour filtrer par nom, variable, catégorie ou description au fil de la frappe.",
+           "zh": "按下 <code>/</code>，邊打字邊依名稱、變數、類別或說明比對。"}},
+    {"h": {"en": "Idempotent writes", "fr": "Écritures idempotentes", "zh": "冪等寫入"},
+     "p": {"en": "Writes a clean <code>BEGIN/END</code> block to your profile — re-running never duplicates exports.",
+           "fr": "Écrit un bloc <code>BEGIN/END</code> propre dans votre profil — le relancer ne duplique jamais les exports.",
+           "zh": "在你的設定檔中寫入一個乾淨的 <code>BEGIN/END</code> 區塊——重複執行絕不會產生重複的 export。"}},
+    {"h": {"en": "Shell auto-detection", "fr": "Détection automatique du shell", "zh": "自動偵測 shell"},
+     "p": {"en": "Finds the right profile for zsh, bash or fish, preferring the file that already holds your block.",
+           "fr": "Trouve le bon profil pour zsh, bash ou fish, en privilégiant le fichier qui contient déjà votre bloc.",
+           "zh": "為 zsh、bash 或 fish 找出正確的設定檔，並優先選用已經含有你區塊的那個檔案。"}},
+    {"h": {"en": "Scriptable CLI", "fr": "CLI scriptable", "zh": "可腳本化的 CLI"},
+     "p": {"en": "<code>--set</code>, <code>--apply</code>, <code>--dry-run</code>, <code>--list</code> and <code>--json</code> run with no TUI at all.",
+           "fr": "<code>--set</code>, <code>--apply</code>, <code>--dry-run</code>, <code>--list</code> et <code>--json</code> fonctionnent sans aucune TUI.",
+           "zh": "<code>--set</code>、<code>--apply</code>、<code>--dry-run</code>、<code>--list</code> 與 <code>--json</code> 完全不需要 TUI 即可執行。"}},
+    {"h": {"en": "Shareable presets", "fr": "Préréglages partageables", "zh": "可分享的預設組"},
+     "p": {"en": "Export your config to a TOML preset and re-apply it on another machine, forward-compatible by design.",
+           "fr": "Exportez votre configuration dans un préréglage TOML et réappliquez-la sur une autre machine, compatible avec les versions futures par conception.",
+           "zh": "把你的設定匯出成 TOML 預設組，再套用到另一台機器；設計上即向前相容。"}},
+    {"h": {"en": "Themes", "fr": "Thèmes", "zh": "主題"},
+     "p": {"en": "Cycle colour themes with <code>t</code> — brew, midnight, forest, rose, mono — remembered across runs.",
+           "fr": "Faites défiler les thèmes de couleur avec <code>t</code> — brew, midnight, forest, rose, mono — mémorisés d'une exécution à l'autre.",
+           "zh": "按 <code>t</code> 輪換配色主題——brew、midnight、forest、rose、mono——每次執行都會記住。"}},
+    {"h": {"en": "Safe by default", "fr": "Sûr par défaut", "zh": "預設安全"},
+     "p": {"en": "Backs up the previous profile to <code>.bak</code> and previews the exact block before writing.",
+           "fr": "Sauvegarde le profil précédent en <code>.bak</code> et affiche un aperçu du bloc exact avant d'écrire.",
+           "zh": "寫入前會把原本的設定檔備份為 <code>.bak</code>，並預覽將寫入的確切區塊。"}},
+    {"h": {"en": "Man page &amp; completions", "fr": "Page man et complétions", "zh": "Man 手冊與自動補全"},
+     "p": {"en": "Ships a man page plus bash, zsh and fish completions.",
+           "fr": "Livré avec une page man et des complétions bash, zsh et fish.",
+           "zh": "隨附 man 手冊，以及 bash、zsh 與 fish 的自動補全。"}}
+  ],
+  "chapters": [
+    {"id": "how",
+     "h": {"en": "One block. Nothing else touched.", "fr": "Un seul bloc. Rien d'autre n'est touché.", "zh": "只有一個區塊，其他一概不動。"},
+     "p": {"en": "Press <code>a</code> and homebrewconfig writes a single marked block to your shell profile. Run it again and only that block changes — the rest of your file is left exactly as it was. Delete the block to remove every managed setting at once.",
+           "fr": "Appuyez sur <code>a</code> et homebrewconfig écrit un unique bloc balisé dans votre profil shell. Relancez-le et seul ce bloc change — le reste de votre fichier reste exactement tel quel. Supprimez le bloc pour retirer d'un coup tous les réglages gérés.",
+           "zh": "按下 <code>a</code>，homebrewconfig 就會在你的 shell 設定檔中寫入一個有標記的區塊。再執行一次，只有那個區塊會改變——檔案的其餘部分完全保持原樣。刪除這個區塊，即可一次移除所有受管理的設定。"},
+     "blocks": [
+       {"type": "pre", "code": "# homebrewconfig BEGIN\n# Generated by homebrewconfig — do not edit manually\n\n# Privacy\nexport HOMEBREW_NO_ANALYTICS=1\n\n# Updates\nexport HOMEBREW_CLEANUP_MAX_AGE_DAYS=30\n# homebrewconfig END"}
+     ]},
+    {"id": "install",
+     "h": {"en": "Install in one line", "fr": "Installation en une ligne", "zh": "一行指令完成安裝"},
+     "p": {"en": "Needs Rust 1.70+ and a 256-color terminal. Works on macOS and Linux.",
+           "fr": "Nécessite Rust 1.70+ et un terminal 256 couleurs. Fonctionne sur macOS et Linux.",
+           "zh": "需要 Rust 1.70+ 與支援 256 色的終端機。可在 macOS 與 Linux 上執行。"},
+     "blocks": [
+       {"type": "steps", "items": [
+         {"en": "<b>Install.</b> <code>brew install vincentlauriat/tap/homebrewconfig</code> — or <code>cargo install homebrewconfig</code>.",
+          "fr": "<b>Installer.</b> <code>brew install vincentlauriat/tap/homebrewconfig</code> — ou <code>cargo install homebrewconfig</code>.",
+          "zh": "<b>安裝。</b><code>brew install vincentlauriat/tap/homebrewconfig</code>——或 <code>cargo install homebrewconfig</code>。"},
+         {"en": "<b>Run.</b> Launch <code>homebrewconfig</code>; it auto-detects your shell profile.",
+          "fr": "<b>Lancer.</b> Lancez <code>homebrewconfig</code> ; il détecte automatiquement votre profil shell.",
+          "zh": "<b>執行。</b>啟動 <code>homebrewconfig</code>；它會自動偵測你的 shell 設定檔。"},
+         {"en": "<b>Apply.</b> Toggle with <code>Space</code>, then press <code>a</code> — review the preview and confirm.",
+          "fr": "<b>Appliquer.</b> Basculez avec <code>Espace</code>, puis appuyez sur <code>a</code> — vérifiez l'aperçu et confirmez.",
+          "zh": "<b>套用。</b>用 <code>Space</code> 切換，然後按 <code>a</code>——檢查預覽並確認。"}
+       ]}
+     ]}
+  ],
+  "close": {
+    "h": {"en": "Tidy up your Homebrew setup", "fr": "Faites le ménage dans votre configuration Homebrew", "zh": "整理好你的 Homebrew 設定"},
+    "p": {"en": "Free, open-source, scriptable. macOS &amp; Linux, any of zsh / bash / fish.",
+          "fr": "Gratuit, open source, scriptable. macOS et Linux, avec zsh, bash ou fish.",
+          "zh": "免費、開源、可腳本化。支援 macOS 與 Linux，zsh／bash／fish 皆可。"},
+    "actions": [
+      {"primary": true, "href": "https://github.com/vincentlauriat/homebrewconfig",
+       "label": {"en": "View on GitHub", "fr": "Voir sur GitHub", "zh": "在 GitHub 上檢視"}},
+      {"href": "https://crates.io/crates/homebrewconfig", "label": "crates.io"}
+    ]
+  },
+  "colophon": {
+    "notes": ["<a href=\"https://lauriat.fr/outils/homebrewconfig/\">lauriat.fr</a>"]
+  }
+}
